@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  wat-go-sdk:
+    container_name: wat-dev
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./:/app
+    env_file:
+      - ./.env
+    entrypoint: |
+      /go/bin/CompileDaemon --build="go build main.go" --command ./main
