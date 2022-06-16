@@ -26,7 +26,13 @@ func Init(job Job, fs filestore.FileStore, batchClient *batch.Batch) JobManager 
 func (jm JobManager) ProcessJob() error {
 	resources, err := jm.ProvisionResources()
 	fmt.Println(err)
-	//add in defer and rollback
+	//add in defer and recover
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered", r)
+			jm.DestructResources(resources)
+		}
+	}()
 	err = jm.GeneratePayloads()
 	fmt.Println(err)
 	for i := 0; i < jm.Job.TaskCount; i++ {
