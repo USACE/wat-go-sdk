@@ -7,47 +7,59 @@ import (
 	"github.com/USACE/filestore"
 	"github.com/aws/aws-sdk-go/service/batch"
 	"github.com/usace/wat-go-sdk/pluginmanager"
+	"gopkg.in/yaml.v3"
 )
 
 //JobManager
 type JobManager struct {
-	Job
+	job           Job
 	store         filestore.FileStore
 	captainCrunch *batch.Batch
 }
 
 func Init(job Job, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
 	return JobManager{
-		Job:           job,
+		job:           job,
 		store:         fs,
 		captainCrunch: batchClient,
 	}
 }
 func (jm JobManager) ProcessJob() error {
-	resources, err := jm.ProvisionResources()
+	resources, err := jm.job.ProvisionResources()
 	fmt.Println(err)
 	//add in defer and recover
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered", r)
-			jm.DestructResources(resources)
+			fmt.Println("Tearing Down Resources")
+			err = jm.job.DestructResources(resources)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}()
-	err = jm.GeneratePayloads()
+	err = jm.job.GeneratePayloads(jm.store)
 	fmt.Println(err)
-	for i := 0; i < jm.Job.TaskCount; i++ {
-		err = jm.ComputeEvent(i, resources)
-		fmt.Println(err)
+	//create error channel.
+	//create waitgroups to throttle compute resources?
+	for i := 0; i < jm.job.EventCount; i++ {
+		go func(index int) {
+			err = jm.job.ComputeEvent(index, resources)
+			fmt.Println(err)
+		}(i)
+
 	}
-	err = jm.DestructResources(resources)
+	err = jm.job.DestructResources(resources)
 	fmt.Println(err)
 	return errors.New("Job Processed!")
 }
 
 //Job
 type Job struct {
-	TaskCount int
+	EventCount int
 	DirectedAcyclicGraph
+	OutputDestination pluginmanager.ResourceInfo
+	InputSource       pluginmanager.ResourceInfo
 }
 
 type DirectedAcyclicGraph struct {
@@ -75,10 +87,28 @@ func (job Job) DestructResources([]ProvisionedResources) error {
 	return errors.New("ka-blewy!!!")
 }
 
-//does this thing need to "run" or "compute"
-func (job Job) GeneratePayloads() error {
-	for i := 0; i < job.TaskCount; i++ {
+//GeneratePayloads
+func (job Job) GeneratePayloads(fs filestore.FileStore) error {
+	//generate payloads for all events up front?
+	for i := 0; i < job.EventCount; i++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
+		outputDestinationPath := fmt.Sprintf("%v/%v%v", job.OutputDestination.Fragment, "event_", i)
+		for _, n := range job.DirectedAcyclicGraph.Nodes {
+			fmt.Println(n.ImageAndTag, outputDestinationPath)
+			payload := mockModelPayload(job.InputSource, job.OutputDestination, outputDestinationPath, n.Plugin)
+			bytes, err := yaml.Marshal(payload)
+			if err != nil {
+				panic(err)
+			}
+			//put payload in s3
+			path := outputDestinationPath + "/" + n.Plugin.Name + "_payload.yml"
+			fmt.Println("putting object in fs:", path)
+			_, err = fs.PutObject(path, bytes)
+			if err != nil {
+				fmt.Println("failure to push payload to filestore:", err)
+				panic(err)
+			}
+		}
 	}
 	return errors.New("payloads!!!")
 }
@@ -89,7 +119,6 @@ func (job Job) ComputeEvent(eventNumber int, resources []ProvisionedResources) e
 	return errors.New(fmt.Sprintf("computing event %v", eventNumber))
 }
 
-//does this thing need to "run" or "compute"
 func submitTask(resources []ProvisionedResources, manifest pluginmanager.ModelManifest) error {
 	//depends on cloud-resources//
 	//submit to batch.
