@@ -49,6 +49,7 @@ func (jm JobManager) ProcessJob() error {
 		}(i)
 
 	}
+	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
 	err = jm.job.DestructResources(resources)
 	fmt.Println(err)
 	return errors.New("Job Processed!")
@@ -95,7 +96,7 @@ func (job Job) GeneratePayloads(fs filestore.FileStore) error {
 		outputDestinationPath := fmt.Sprintf("%v/%v%v", job.OutputDestination.Fragment, "event_", i)
 		for _, n := range job.DirectedAcyclicGraph.Nodes {
 			fmt.Println(n.ImageAndTag, outputDestinationPath)
-			payload := mockModelPayload(job.InputSource, job.OutputDestination, outputDestinationPath, n.Plugin)
+			payload := outputDestinationPath + n.Plugin.Name + "payload.yml"
 			bytes, err := yaml.Marshal(payload)
 			if err != nil {
 				panic(err)
