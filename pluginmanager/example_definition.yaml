@@ -1,0 +1,48 @@
+model_configuration_definition:
+ parameters:
+    - project ##for ras - other software packages may have model and alternative or project and simulation etc.
+    - plan
+ inputs:
+    - optional:
+        # - scalar: int / float
+        # - specification: string e.g. time-window
+        - objects:
+            - timeseries:
+                - supported-types:
+                    - csv
+                    - dss
+                    - arrow
+            - scalar:
+                - supported-types:
+                    - int
+                    - float
+                - name:
+                - description: 
+            - file:
+                - supported-types:
+                    - hdf
+                    - csv
+                    - b
+                - name:
+                - extension: 'p**.tmp.hdf'
+                - description: used if updating 2D time series
+                - options:
+                    - name: boundary-condition-name or path
+                    - instruction: string
+                    - description: path in an hdf file
+
+    - required:
+        - objects:
+            - file:
+                - name: .csv
+                - description:
+                - boundaryconmditions:
+                    - name: boundary-condition
+                    - description: path in an hdf file
+  outputs:
+    - optional:
+        - name: self
+          format: object
+    - required:
+        - name: self
+          format: object

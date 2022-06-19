@@ -1,0 +1,44 @@
+model_configuration:
+  project: Muncie # keyword used throughout
+  plan: None # keyword for RES SIM, HMS, ras plan even
+model_links:
+  inputs:
+    - objects:
+        - file:
+            - authority: cloud-wat-dev
+            - path:
+            - extension: 'p04.tmp.hdf'
+            - description: used if updating 2D time series
+            - options:
+                - name: boundary-condition-name or path
+                - instruction: string
+                - description: path in an hdf file
+        - file:
+            - path:
+            - extension: '.b04'
+            - description: used if updating 1D time series, breach or other
+            - options:
+                - name: boundary-condition
+                - instruction: string
+                - description: text or regex
+        - file:
+            - path:
+            - extension: '.dss'
+            - description: used if updating 1D time series, breach or other
+            - options:
+                - name: boundary-condition-2
+                - instruction: string
+                - description: text or regex
+
+        - file:
+            - path:
+            - extension: '.csv'
+            - description: used if updating 1D time series, breach or other
+            - options:
+                - name: boundary-condition-1
+                - instruction: string
+                - description: text or regex
+
+  outputs:
+    - name: self
+    - format: object
