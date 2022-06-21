@@ -2,14 +2,16 @@ model_configuration:
   name: Muncie # keyword used throughout
   alternative: .p04 # keyword for RES SIM, HMS, ras plan even
 inputs:
-  - name: {name}.{alternative}.tmp.hdf
+  - data:
+    name: {name}.{alternative}.tmp.hdf
     parameter: temporary plan hdf file
-    resource_info:
-      scheme: s3
-      authority: cloud-wat-dev
-      path: models/{model_name}/{model_name}.p04.tmp.hdf
-  - name: '/Event Conditions/ White  Reach: Muncie  RS: 15696.24'
-    paramter: flow time-series table
+  resource_info:
+    scheme: s3
+    authority: cloud-wat-dev
+    path: models/{model_name}/{model_name}.p04.tmp.hdf
+  - data:
+      name: '/Event Conditions/ White  Reach: Muncie  RS: 15696.24'
+      paramter: flow time-series table
     resource_info:
       scheme: s3
       authority: cloud-wat-dev
