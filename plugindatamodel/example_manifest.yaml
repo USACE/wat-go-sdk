@@ -1,9 +1,8 @@
 model_configuration:
   project: Muncie # keyword used throughout
-  plan: None # keyword for RES SIM, HMS, ras plan even
+  plan: p04 # keyword for RES SIM, HMS, ras plan even
 model_links:
   inputs:
-    - objects:
         - file:
             - authority: cloud-wat-dev
             - path:
