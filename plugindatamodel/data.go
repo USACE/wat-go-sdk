@@ -9,3 +9,4 @@ type Data struct {
 }
 
 //acceptable formats? format options?
+//optional/required
