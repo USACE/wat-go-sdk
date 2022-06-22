@@ -3,13 +3,13 @@ requirements:
   - plugin:
      name: string
      image_and_tag: string
-     command:
+     command: []string
   - model_identifier:
      name: string
      alternative: string
   - inputs:
      types: 
-        - file:
+        - file: ##do we really anticipate additional types?
            name: string
            path: string, optional
   - outputs:
