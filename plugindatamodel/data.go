@@ -1,12 +1,37 @@
 package plugindatamodel
 
-//Data
 type Data struct {
-	//Name - usually describes a location, or a need e.g. (Muncie RS 15893.2 or Event Configuration)
-	Name string `json:"name" yaml:"name"`
-	//Parameter - convention is to name the parameter in lower case.
-	Parameter string `json:"parameter" yaml:"parameter"` //file, flow, stage, timewindow, eventconfiguration - definately not an enum because it could be anything
+	FileName string `json:"filename" yaml:"filename"`
+	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
 }
 
+/*
+type DataContainer struct {
+	Type        string `json:"type" yaml:"type"`
+	DataElement `json:"data" yaml:"data"`
+}
+type DataElement interface {
+	DataElementType() string
+}
+
+//FileData
+type File struct {
+	//FileName
+	FileName string `json:"filename" yaml:"filename"`
+}
+
+func (fd File) DataElementType() string {
+	return strings.ToLower(reflect.TypeOf(fd).Name())
+}
+
+//FileAndPathData
+type FileAndPath struct {
+	Type string `json:"type" yaml:"type"`
+	//FileName
+	FileName string `json:"filename" yaml:"filename"`
+	//Path describes the specific information in the file (e.g. /a/b/c/d/e/f for dss)
+	Path string `json:"path" yaml:"path"`
+}
+*/
 //acceptable formats? format options?
 //optional/required

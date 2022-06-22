@@ -50,8 +50,7 @@ func TestWritePayload(t *testing.T) {
 	inputs := make([]plugindatamodel.ResourcedData, 2)
 	inputs[0] = plugindatamodel.ResourcedData{
 		Data: plugindatamodel.Data{
-			Name:      "Muncie.p04.tmp.hdf",
-			Parameter: "temporary hdf file",
+			FileName: "Muncie.p04.tmp.hdf",
 		},
 		ResourceInfo: plugindatamodel.ResourceInfo{
 			Scheme:    "s3",
@@ -61,8 +60,7 @@ func TestWritePayload(t *testing.T) {
 	}
 	inputs[1] = plugindatamodel.ResourcedData{
 		Data: plugindatamodel.Data{
-			Name:      "/Event Conditions/ White  Reach: Muncie  RS: 15696.24",
-			Parameter: "flow time-series table",
+			FileName: "/Event Conditions/ White  Reach: Muncie  RS: 15696.24",
 		},
 		ResourceInfo: plugindatamodel.ResourceInfo{
 			Scheme:    "s3",
@@ -72,12 +70,10 @@ func TestWritePayload(t *testing.T) {
 	}
 	outputs := make([]plugindatamodel.Data, 2)
 	outputs[0] = plugindatamodel.Data{
-		Name:      "Muncie.p04.tmp.hdf",
-		Parameter: "temporary hdf file",
+		FileName: "Muncie.p04.tmp.hdf",
 	}
 	outputs[1] = plugindatamodel.Data{
-		Name:      "Muncie.log",
-		Parameter: "log file",
+		FileName: "Muncie.log",
 	}
 	payload := plugindatamodel.Payload{
 		ModelIdentifier: plugindatamodel.ModelIdentifier{

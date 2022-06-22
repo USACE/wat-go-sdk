@@ -11,14 +11,11 @@ model_identifier:
 inputs:
     - data:
         name: Muncie.p04.tmp.hdf
-        parameter: temporary plan hdf file
       source_data:
         name: Muncie.p04.tmp.hdf
-        parameter: temporary plan hdf file
       producing_manifest_id: 1233
     - data:
         name: '/Event Conditions/Unsteady/Boundary Conditions/Flow Hydrographs/River: White  Reach: Muncie  RS: 15696.24'
-        parameter: flow time-series table
       source_data:
         name: boundary.csv
         parameter: flow time-series csv

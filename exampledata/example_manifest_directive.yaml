@@ -1,0 +1,19 @@
+manifest_id: int
+requirements:
+  - plugin:
+     name: string
+     image_and_tag: string
+     command:
+  - model_identifier:
+     name: string
+     alternative: string
+  - inputs:
+     types: 
+        - file:
+           name: string
+           path: string, optional
+  - outputs:
+     types: 
+        - file:
+           name: string
+           path: string, optional

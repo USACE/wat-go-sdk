@@ -4,14 +4,12 @@ model_configuration:
 inputs:
     - data:
         name: Muncie.p04.tmp.hdf
-        parameter: temporary hdf file
       resource_info:
         scheme: s3
         authority: cloud-wat-dev
         path: /data/models/Muncie
     - data:
         name: '/Event Conditions/ White  Reach: Muncie  RS: 15696.24'
-        parameter: flow time-series table
       resource_info:
         scheme: s3
         authority: cloud-wat-dev
@@ -22,6 +20,4 @@ output_destination:
     path: /runs/realization_1/event_1
 outputs:
     - name: Muncie.p04.tmp.hdf
-      parameter: temporary hdf file
     - name: Muncie.log
-      parameter: log file

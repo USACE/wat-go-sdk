@@ -1,0 +1,19 @@
+manifest_id: 1235
+plugin:
+- name: ras-unsteady-2d
+- image_and_tag: ras-unsteady-2d:v0.0.1
+- command: 
+  - ./main
+  - payload
+model_identifier:
+  - name: Muncie
+  - alternative: .p04
+inputs:
+  - name: Muncie.p04.tmp.hdf
+  - name: Muncie.b04
+  - name: Muncie.x04
+  - name: Muncie.prj
+  - name: Muncie.c04
+outputs:
+  - name: Muncie.p04.hdf
+  - file_name: Muncie.log

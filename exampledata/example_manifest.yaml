@@ -1,20 +1,16 @@
 manifest_id: 1234
 plugin:
- - name: ras-mutator
- - image_and_tag: ras-mutator:v0.0.1
- - command: 
+  name: ras-mutator
+  image_and_tag: ras-mutator:v0.0.1
+  command: 
     - ./main
     - -payload=
 model_identifier:
- - name: Muncie
- - alternative: .p04
- inputs:
-    - name: {name}.{alternative}.tmp.hdf
-     - parameter: temporary plan hdf file
-    - name: '/Event Conditions/Unsteady/Boundary Conditions/Flow Hydrographs/River: White  Reach: Muncie  RS: 15696.24'
-     - parameter: flow time-series table
-  outputs:
-    - name: {name}.{alternative}.tmp.hdf
-     - parameter: modified temporary plan hdf file
-    - name: {name}.log
-     - parameter: log file
+  name: Muncie
+  alternative: .p04
+inputs:
+  - name: Muncie.p04.tmp.hdf
+  - name: '/Event Conditions/Unsteady/Boundary Conditions/Flow Hydrographs/River: White  Reach: Muncie  RS: 15696.24'
+outputs:
+  - name: Muncie.p04.tmp.hdf
+  - name: Muncie.log
