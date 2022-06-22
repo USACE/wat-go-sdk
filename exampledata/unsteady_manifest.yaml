@@ -16,4 +16,5 @@ inputs:
   - name: Muncie.c04
 outputs:
   - name: Muncie.p04.hdf
-  - file_name: Muncie.log
+  - name: Muncie.dss
+  - name: Muncie.log
