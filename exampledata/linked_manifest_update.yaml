@@ -35,45 +35,6 @@ inputs:
         - path: 'Boundary4' # not sure how these are actually stored.
           type: 1d flow time series
           source_info:
-            name: fc1.csv
+            name: hsm.dss
+            path: /a/b/c/d/e/f
             producing_manifest: hsm_manifestID
-
-#
-#payload_id: ap3rwfgvrwfgvds
-#outputs:
-#  - data:
-#      id: 321321
-#      type: writer
-#      name: fully-qualified-Muncie.p04.tmp.hdf
-#      internal_paths:
-#        - id: asdfasd
-#          path: '/Event Conditions/15696.24'
-#        - id: hbtrgfd
-#          path: '/Event Conditions/789563.89'
-#inputs:
-#  - data:
-#      id: 908349
-#      type: reader
-#      name: fully-qualified-Muncie.p04.tmp.hdf
-#  - data:
-#      id: 54622574
-#      type: reader
-#      name: b.csv
-#  - data:
-#      id: 3655543
-#      type: reader
-#      name: a.csv
-#connections:
-#  - get:
-#      read_from: 908349
-#      write_to: 321321
-#  - post:
-#      read_from: 3655543@None
-#      write_to: 321321@asdfasd
-#  - post:
-#      read_from: 54622574@None
-#      write_to: 321321@hbtrgfd
-  
-  #optional
-#  - put:
-#      write_to: 321321
