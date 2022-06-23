@@ -11,6 +11,8 @@ model_identifier:
 inputs:
     - data:
         name: Muncie.p04.tmp.hdf
+        paths: 
+        - '/Event Conditions/Unsteady/Boundary Conditions/Flow Hydrographs/River: White  Reach: Muncie  RS: 15696.24'
       source_data:
         name: Muncie.p04.tmp.hdf
       producing_manifest_id: 1233
