@@ -1,13 +1,11 @@
 manifest_id: abcd
-outputs:
-  - data:
-      name: Muncie.p04.tmp.hdf
-  - data:
-      name: Muncie.b04
+model_configuration:
+    name: Muncie
+    alternative: .p04
 inputs:
   - data:
       name: Muncie.p04.tmp.hdf
-      internal_paths: ## there might be dozens, each a different type.
+      internal_paths: ## there might be dozens, each a different type - or none.
         - path: '/Event Conditions/15696.24'
           type: 2d flow time series
         - path: '/Event Conditions/789563.89'
@@ -19,3 +17,8 @@ inputs:
           type: failure elevation
         - path: 'Boundary4' # not sure how these are actually stored.
           type: 1d flow time series
+outputs:
+  - data:
+      name: Muncie.p04.tmp.hdf
+  - data:
+      name: Muncie.b04

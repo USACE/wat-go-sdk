@@ -49,7 +49,7 @@ func readobject(t *testing.T, path string, object interface{}) {
 func TestWritePayload(t *testing.T) {
 	inputs := make([]plugindatamodel.ResourcedData, 2)
 	inputs[0] = plugindatamodel.ResourcedData{
-		Data: plugindatamodel.Data{
+		FileData: plugindatamodel.FileData{
 			FileName: "Muncie.p04.tmp.hdf",
 		},
 		ResourceInfo: plugindatamodel.ResourceInfo{
@@ -59,7 +59,7 @@ func TestWritePayload(t *testing.T) {
 		},
 	}
 	inputs[1] = plugindatamodel.ResourcedData{
-		Data: plugindatamodel.Data{
+		FileData: plugindatamodel.FileData{
 			FileName: "/Event Conditions/ White  Reach: Muncie  RS: 15696.24",
 		},
 		ResourceInfo: plugindatamodel.ResourceInfo{
@@ -68,11 +68,11 @@ func TestWritePayload(t *testing.T) {
 			Path:      "/runs/realization_1/event_1/Muncie_RS_15696.24.csv",
 		},
 	}
-	outputs := make([]plugindatamodel.Data, 2)
-	outputs[0] = plugindatamodel.Data{
+	outputs := make([]plugindatamodel.FileData, 2)
+	outputs[0] = plugindatamodel.FileData{
 		FileName: "Muncie.p04.tmp.hdf",
 	}
-	outputs[1] = plugindatamodel.Data{
+	outputs[1] = plugindatamodel.FileData{
 		FileName: "Muncie.log",
 	}
 	payload := plugindatamodel.Payload{
