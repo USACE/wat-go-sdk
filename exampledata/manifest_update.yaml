@@ -1,4 +1,4 @@
-manifest_id: abcd
+manifest_id: mutator_manifest_id
 model_configuration:
     name: Muncie
     alternative: .p04

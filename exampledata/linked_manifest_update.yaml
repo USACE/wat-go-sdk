@@ -1,4 +1,43 @@
-linked_manifest_id: abcdef
+linked_manifest_id: mutator_linked_manifest_id
+model_configuration:
+    name: Muncie
+    alternative: .p04
+inputs:
+  - data:
+      id: 3
+      name: Muncie.p04.tmp.hdf
+      source_info: ## in this case this is the original unmodified file, it is not coming from a plugin, but rather the "root directory"
+        path: fully-qualified-path/Muncie.p04.tmp.hdf
+      internal_paths: ## there might be dozens, each a different type.
+        - path: '/Event Conditions/15696.24'
+          #type: 2d flow time series
+          source_info:
+            id: hsm_1 ##add ids
+            #name: hsm1.csv
+            producing_manifest: hsm_linked_manifest_ID
+        - path: '/Event Conditions/789563.89'
+          type: 2d flow time series
+          source_info:
+            name: hsm2.csv
+            producing_manifest: hsm_linked_manifest_ID
+  - data:
+      id: 4
+      name: Muncie.b04
+      source_info:
+        path: fully-qualified-path/Muncie.b04
+      internal_paths:
+        - path: 'BreachLocationA' #not sure how these are actually stored
+          type: failure elevation
+          source_info:
+            name: fc1.csv
+            producing_manifest: fc_linked_manifest_ID
+        - path: 'Boundary4' # not sure how these are actually stored.
+          type: 1d flow time series
+          source_info:
+            name: hsm.dss
+            internal_paths:
+             - path: /a/b/c/d/e/f
+            producing_manifest: hsm_linked_manifest_ID
 outputs:
   - data:
       id: 1
@@ -6,35 +45,3 @@ outputs:
   - data:
       id: 2
       name: Muncie.b04
-inputs:
-  - data:
-      id: 3
-      name: Muncie.p04.tmp.hdf
-      source_info:
-        path: fully-qualified-path/Muncie.p04.tmp.hdf
-      internal_paths: ## there might be dozens, each a different type.
-        - path: '/Event Conditions/15696.24'
-          type: 2d flow time series
-          source_info:
-            name: hsm1.csv
-            producing_manifest: hsm_manifestID
-        - path: '/Event Conditions/789563.89'
-          type: 2d flow time series
-          source_info:
-            name: hsm2.csv
-            producing_manifest: hsm_manifestID
-  - data:
-      id: 4
-      name: Muncie.b04
-      internal_paths:
-        - path: 'BreachLocationA' #not sure how these are actually stored
-          type: failure elevation
-          source_info:
-            name: fc1.csv
-            producing_manifest: fc_manifestID
-        - path: 'Boundary4' # not sure how these are actually stored.
-          type: 1d flow time series
-          source_info:
-            name: hsm.dss
-            path: /a/b/c/d/e/f
-            producing_manifest: hsm_manifestID
