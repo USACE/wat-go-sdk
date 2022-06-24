@@ -35,9 +35,13 @@ inputs:
           root: cloud-wat-dev
           path: /runs/event_1/hsm/hsm3.dss
 outputs:
-  - data:
-      id: 1
-      name: Muncie.p04.tmp.hdf
-  - data:
-      id: 2
-      name: Muncie.b04
+  - filename: Muncie.p04.tmp.hdf
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /runs/event_1/mutator/Muncie.p04.tmp.hdf
+  - filename: Muncie.b04
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /runs/event_1/mutator/Muncie.b04

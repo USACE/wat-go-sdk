@@ -75,24 +75,29 @@ func TestWritePayload(t *testing.T) {
 			Path:  "/runs/realization_1/event_1/Muncie_RS_15696.24.csv",
 		},
 	}
-	outputs := make([]plugindatamodel.FileData, 2)
-	outputs[0] = plugindatamodel.FileData{
+	outputs := make([]plugindatamodel.ResourcedFileData, 2)
+	outputs[0] = plugindatamodel.ResourcedFileData{
 		FileName: "Muncie.p04.tmp.hdf",
+		ResourceInfo: plugindatamodel.ResourceInfo{
+			Store: "s3",
+			Root:  "cloud-wat-dev",
+			Path:  "/runs/realization_1/event_1",
+		},
 	}
-	outputs[1] = plugindatamodel.FileData{
+	outputs[1] = plugindatamodel.ResourcedFileData{
 		FileName: "Muncie.log",
+		ResourceInfo: plugindatamodel.ResourceInfo{
+			Store: "s3",
+			Root:  "cloud-wat-dev",
+			Path:  "/runs/realization_1/event_1",
+		},
 	}
 	payload := plugindatamodel.Payload{
 		/*ModelIdentifier: plugindatamodel.ModelIdentifier{
 			Name:        "Muncie",
 			Alternative: ".p04",
 		},*/
-		Inputs: inputs,
-		OutputDestination: plugindatamodel.ResourceInfo{
-			Store: "s3",
-			Root:  "cloud-wat-dev",
-			Path:  "/runs/realization_1/event_1",
-		},
+		Inputs:  inputs,
 		Outputs: outputs,
 	}
 	b, err := yaml.Marshal(payload)
