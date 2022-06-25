@@ -13,22 +13,21 @@ import (
 func TestReadPayload(t *testing.T) {
 	path := "../exampledata/payload_update.yaml"
 	payload := plugindatamodel.Payload{}
-	readobject(t, path, payload)
+	readobject(t, path, &payload)
 }
 
-/*
 func TestReadLinkedManifest(t *testing.T) {
-	path := "../exampledata/example_linked_manifest.yaml"
+	path := "../exampledata/linked_manifest_update.yaml"
 	linkedmanifest := plugindatamodel.LinkedModelManifest{}
 	readobject(t, path, &linkedmanifest)
 }
 func TestReadManifest(t *testing.T) {
-	path := "../exampledata/example_manifest.yaml"
+	path := "../exampledata/manifest_update.yaml"
 	manifest := plugindatamodel.ModelManifest{}
 	readobject(t, path, &manifest)
 }
-*/
-func readobject(t *testing.T, path string, object plugindatamodel.Payload) {
+
+func readobject(t *testing.T, path string, object interface{}) {
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fail()
@@ -38,7 +37,7 @@ func readobject(t *testing.T, path string, object plugindatamodel.Payload) {
 	if err != nil {
 		t.Fail()
 	}
-	err = yaml.Unmarshal(b, &object)
+	err = yaml.Unmarshal(b, object)
 	if err != nil {
 		log.Println(err)
 		t.Fail()

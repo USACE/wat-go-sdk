@@ -1,24 +1,26 @@
-manifest_id: mutator_manifest_id
-model_configuration:
+manifest_id: 111
+plugin:
+  name: ras-mutator
+  image_and_tag: ras-mutatorv0.0.1
+  command:
+    - ./main
+    - payload=
+model_identifier:
     name: Muncie
     alternative: .p04
 inputs:
-  - data:
-      name: Muncie.p04.tmp.hdf
-      internal_paths: ## there might be dozens, each a different type - or none.
-        - path: '/Event Conditions/15696.24'
-          type: 2d flow time series
-        - path: '/Event Conditions/789563.89'
-          type: 2d flow time series
-  - data:
-      name: Muncie.b04
-      internal_paths:
-        - path: 'BreachLocationA' #not sure how these are actually stored
-          type: failure elevation
-        - path: 'Boundary4' # not sure how these are actually stored.
-          type: 1d flow time series
+  - filename: Muncie.p04.tmp.hdf
+    internal_paths: ## there might be dozens, each a different type - or none.
+      - pathname: '/Event Conditions/15696.24'
+        type: 2d flow time series
+      - pathname: '/Event Conditions/789563.89'
+        type: 2d flow time series
+  - filename: Muncie.b04
+    internal_paths:
+      - pathname: 'BreachLocationA' #not sure how these are actually stored
+        type: failure elevation
+      - pathname: 'Boundary4' # not sure how these are actually stored.
+        type: 1d flow time series
 outputs:
-  - data:
-      name: Muncie.p04.tmp.hdf
-  - data:
-      name: Muncie.b04
+  - filename: Muncie.p04.tmp.hdf
+  - filename: Muncie.b04
