@@ -1,4 +1,4 @@
-linked_manifest_id: 0011
+linked_manifest_id: 1112
 plugin:
   name: event_generator
   image_and_tag: event_generator:v0.0.1

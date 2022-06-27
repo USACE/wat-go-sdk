@@ -1,4 +1,4 @@
-manifest_id: 1111
+manifest_id: 2221
 plugin:
   name: fragilitycurve
   image_and_tag: fragilitycurve:v0.0.1

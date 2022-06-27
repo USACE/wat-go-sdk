@@ -1,4 +1,4 @@
-manifest_id: 0001
+manifest_id: 1111
 plugin:
   name: event_generator
   image_and_tag: event_generator:v0.0.1

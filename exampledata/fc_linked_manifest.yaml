@@ -1,4 +1,4 @@
-linked_manifest_id: 1112
+linked_manifest_id: 2222
 plugin:
   name: fragilitycurve
   image_and_tag: fragilitycurve:v0.0.1

@@ -1,4 +1,4 @@
-manifest_id: 1111
+manifest_id: 3331
 plugin:
   name: hydrograph_scaler
   image_and_tag: hydrographscaler:v0.0.1
