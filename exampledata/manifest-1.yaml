@@ -1,0 +1,23 @@
+plugin:
+  name: ras-mutator
+  image_and_tag: lawlerseth/ras-mutator:v0.1.1
+  command:
+    - ./h5rasedit
+    - wat
+    - -f
+    - jobs/muncie/muncie-{r1-e2-}ras-mutator.yml
+model_identifier:
+  name: Muncie
+  alternative: .p04
+inputs:
+  - filename: s3://model-library/pilots/Muncie/Muncie.p04.tmp.hdf
+    internal_paths:
+      - pathname: /Event Conditions/15696.24
+      - pathname: /Event Conditions/789563.89
+  - filename: s3://model-library/pilots/Muncie/Muncie.b04
+    internal_paths:
+      - pathname: BreachLocationA
+      - pathname: Boundary4
+outputs:
+  - filename: s3://model-library/wat/jobs/Muncie/{r1-e2-}/Muncie.p04.tmp.hdf
+  - filename: s3://model-library/wat/jobs/Muncie/{r1-e2-}/Muncie.b04
