@@ -1,0 +1,25 @@
+job_identifier: 1234
+event_count: 100000
+linked_manifests: #could be stored in a database rather than files on a 
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/hsm_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/ras_mutator_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/ras_runner_linked_manifest.yaml
+input_source:
+  resource_info:
+    store: s3
+    root: model-library
+    path: /kanawha/models/
+output_destination:
+  resource_info:
+    store: s3
+    root: cloud-wat-dev
+    path: /kanawha/runs/
