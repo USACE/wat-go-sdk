@@ -1,23 +1,17 @@
 linked_manifest_id: 1112
 plugin:
-  name: hydrograph_scaler
-  image_and_tag: hydrographscaler:v0.0.1
+  name: fragilitycurve
+  image_and_tag: fragilitycurve:v0.0.1
   command:
     - ./main
     - payload=
 model_identifier:
+  name: FC
 inputs:
   - filename: event_configuration.json
     source_data_identifier: 1 
-  - filename: hsm.json
+  - filename: fc.json
     source_data_identifier: 0 #this is technically in the wat project directory
 outputs:
-  - filename: hsm1.csv
-    id: 2
-  - filename: hsm2.csv
-    id: 3
-  - filename: hsm3.dss
-    id: 4
-    internal_paths:
-    - pathname: /a/b/c/d/e/f/
-      id: 5
+  - filename: fc1.csv
+    id: 6

@@ -1,0 +1,13 @@
+payload_id: 333
+inputs:
+  - filename: eg.json
+    resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/eg.json
+outputs:
+  - filename: event_configuration.json
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /kanawha/runs/event_1/event_configuration.json

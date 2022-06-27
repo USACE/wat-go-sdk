@@ -1,4 +1,4 @@
-linked_manifest_id: 222
+manifest_id: 111
 plugin:
   name: ras-mutator
   image_and_tag: ras-mutator:v0.0.1
@@ -10,24 +10,17 @@ model_identifier:
     alternative: .p04
 inputs:
   - filename: Muncie.p04.tmp.hdf
-    source_data_identifier: 000111 ## in this case this is the original unmodified file, it is not coming from a plugin, but rather the "root directory"
-    internal_paths: ## there might be dozens, each a different type.
+    internal_paths: ## there might be dozens, each a different type - or none.
       - pathname: '/Event Conditions/15696.24'
-        source_data_identifier: 1
+        type: 2d flow time series
       - pathname: '/Event Conditions/789563.89'
-        source_data_identifier: 2
+        type: 2d flow time series
   - filename: Muncie.b04
-    source_data_identifier: 0001
     internal_paths:
-      - pathname: 'BreachLocationA' 
-        source_data_identifier: 0006
-        producing_manifest_identifier: 000456
+      - pathname: 'BreachLocationA' #not sure how these are actually stored
+        type: failure elevation
       - pathname: 'Boundary4' # not sure how these are actually stored.
-        source_path_name: /a/b/c/d/e/f
-        source_data_identifier: 0003
-        producing_manifest_identifier: 000123
+        type: 1d flow time series
 outputs:
   - filename: Muncie.p04.tmp.hdf
-    id: 0007
   - filename: Muncie.b04
-    id: 0008

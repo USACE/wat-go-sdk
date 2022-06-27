@@ -1,0 +1,30 @@
+payload_id: 1112
+inputs:
+  - filename: event_configuration.json
+    resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/event_configuration.json
+  - filename: hsm.json
+    resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/hsm.json
+outputs:
+  - filename: hsm1.csv
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /kanawha/runs/event_1/hsm1.csv
+  - filename: hsm2.csv
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /kanawha/runs/event_1/hsm2.csv
+  - filename: hsm3.dss
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /kanawha/runs/event_1/hsm3.dss
+    internal_path:
+      pathname: /a/b/c/d/e/f/

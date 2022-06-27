@@ -1,0 +1,14 @@
+manifest_id: 1111
+plugin:
+  name: fragilitycurve
+  image_and_tag: fragilitycurve:v0.0.1
+  command:
+    - ./main
+    - payload=
+model_identifier:
+    name: FC
+inputs:
+  - filename: event_configuration.json
+  - filename: FC.json
+outputs:
+  - filename: fc1.csv

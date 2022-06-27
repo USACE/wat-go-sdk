@@ -14,3 +14,5 @@ outputs:
   - filename: hsm1.csv
   - filename: hsm2.csv
   - filename: hsm3.dss
+    internal_path:
+      pathname: /a/b/c/d/e/f/
