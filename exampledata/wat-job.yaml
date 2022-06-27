@@ -13,7 +13,7 @@ linked_manifests: #could be stored in a database rather than files on a
       store: s3
       root: model-library
       path: /kanawha/models/ras_runner_linked_manifest.yaml
-input_source:
+input_source: ##im assuming the models are going to be centrally located with this - that might be a bad assumption.
   resource_info:
     store: s3
     root: model-library
