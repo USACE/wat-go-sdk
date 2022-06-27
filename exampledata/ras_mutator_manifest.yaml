@@ -1,7 +1,7 @@
 linked_manifest_id: 222
 plugin:
   name: ras-mutator
-  image_and_tag: ras-mutatorv0.0.1
+  image_and_tag: ras-mutator:v0.0.1
   command:
     - ./main
     - payload=
@@ -9,21 +9,15 @@ model_identifier:
     name: Muncie
     alternative: .p04
 inputs:
-  - id: 3
-    filename: Muncie.p04.tmp.hdf
+  - filename: Muncie.p04.tmp.hdf
     source_data_identifier: 000111 ## in this case this is the original unmodified file, it is not coming from a plugin, but rather the "root directory"
-    producing_manifest_identifier: 000000
     internal_paths: ## there might be dozens, each a different type.
       - pathname: '/Event Conditions/15696.24'
-        source_data_identifier: 0001
-        producing_manifest_identifier: 000123
+        source_data_identifier: 1
       - pathname: '/Event Conditions/789563.89'
-        source_data_identifier: 0002
-        producing_manifest_identifier: 000123
-  - id: 4
-    filename: Muncie.b04
+        source_data_identifier: 2
+  - filename: Muncie.b04
     source_data_identifier: 0001
-    producing_manifest_identifier: 0001
     internal_paths:
       - pathname: 'BreachLocationA' 
         source_data_identifier: 0006

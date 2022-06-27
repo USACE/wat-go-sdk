@@ -4,6 +4,10 @@ linked_manifests: #could be stored in a database rather than files on a
   - resource_info:
       store: s3
       root: model-library
+      path: /kanawha/models/event_generator_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
       path: /kanawha/models/hsm_linked_manifest.yaml
   - resource_info:
       store: s3
