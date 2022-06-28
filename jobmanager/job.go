@@ -69,20 +69,22 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	return errors.New(fmt.Sprintf("computing event %v", eventIndex))
 }
 
-func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventindex int) error {
+func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventIndex int) error {
 	//depends on cloud-resources//
-	dependencies, err := job.findDependencies(manifest, eventindex)
+	dependencies, err := job.findDependencies(manifest, eventIndex)
 	if err != nil {
 		panic("woah!")
 	} else {
 		fmt.Print(dependencies)
 	}
+	payloadPath := fmt.Sprintf("%vevent_%v/%v_payload.yml", job.OutputDestination.Path, eventIndex, manifest.Plugin.Name)
+	fmt.Println(payloadPath)
 	//submit to batch.
 	batchjobarn := "batch arn returned."
 	//set job arn
 	for _, resource := range job.resources {
 		if resource.LinkedManifest.ManifestID == manifest.ManifestID {
-			offsetIndex := eventindex - job.EventStartIndex //incase we start at a non zero index..
+			offsetIndex := eventIndex - job.EventStartIndex //incase we start at a non zero index..
 			resource.JobARN[offsetIndex] = &batchjobarn
 			break
 		}
