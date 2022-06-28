@@ -1,0 +1,17 @@
+linked_manifest_id: 2222
+plugin:
+  name: fragilitycurve
+  image_and_tag: fragilitycurve:v0.0.1
+  command:
+    - ./main
+    - payload=
+model_identifier:
+  name: FC
+inputs:
+  - filename: event_configuration.json
+    source_data_identifier: 9
+  - filename: fc.json
+    source_data_identifier: 2
+outputs:
+  - filename: fc1.csv
+    id: 10

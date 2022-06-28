@@ -1,0 +1,31 @@
+linked_manifest_id: 222
+plugin:
+  name: ras-mutator
+  image_and_tag: ras-mutator:v0.0.1
+  command:
+    - ./main
+    - payload=
+model_identifier:
+    name: Muncie
+    alternative: .p04
+inputs:
+  - filename: Muncie.p04.tmp.hdf
+    source_data_identifier: 4
+    internal_paths: ## there might be dozens, each a different type.
+      - pathname: '/Event Conditions/15696.24'
+        source_data_identifier: 11
+      - pathname: '/Event Conditions/789563.89'
+        source_data_identifier: 12
+  - filename: Muncie.b04
+    source_data_identifier: 5
+    internal_paths:
+      - pathname: 'BreachLocationA' 
+        source_data_identifier: 10
+      - pathname: 'Boundary4' # not sure how these are actually stored.
+        source_path_identifier: 14
+        source_file_identifier: 13
+outputs:
+  - filename: Muncie.p04.tmp.hdf
+    id: 15
+  - filename: Muncie.b04
+    id: 16

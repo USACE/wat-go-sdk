@@ -1,0 +1,18 @@
+payload_id: 2223
+inputs:
+  - filename: fc.json
+    resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/fc.json
+  - filename: event_configuration.json
+    resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/event_configuration.json
+outputs:
+  - filename: fc.csv
+    resource_info:
+      store: s3
+      root: cloud-wat-dev
+      path: /kanawha/runs/event_1/fc.csv

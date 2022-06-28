@@ -1,0 +1,83 @@
+job_identifier: 1234
+event_start_index: 0
+event_end_index: 100000
+models:
+  - model_identification:
+      name: EG
+      files:
+        - id: 1
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/EG.json
+  - model_identification:
+      name: fc
+      files:
+        - id: 2
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/fc.json
+  - model_identification:
+      name: hsm
+      files:
+        - id: 3
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/hsm.json
+  - model_identification:
+      name: Muncie
+      alternative: .p04
+      files:
+        - id: 4
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/Muncie.p04.tmp.hdf
+        - id: 5
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/Muncie.b04
+        - id: 6
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/Muncie.x04
+        - id: 7
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/Muncie.c04
+        - id: 8
+          resource_info:
+            store: s3
+            root: model-library
+            path: /kanawha/models/Muncie.prj
+linked_manifests: #could be stored in a database rather than files on a 
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/event_generator_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/hsm_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/fc_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/ras_mutator_linked_manifest.yaml
+  - resource_info:
+      store: s3
+      root: model-library
+      path: /kanawha/models/ras_runner_linked_manifest.yaml
+output_destination:
+  resource_info:
+    store: s3
+    root: cloud-wat-dev
+    path: /kanawha/runs/

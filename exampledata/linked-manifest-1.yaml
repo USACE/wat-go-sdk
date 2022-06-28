@@ -1,0 +1,32 @@
+manifest_id: a7bbf081-49ab-41e1-a75c-1f31dae487f0
+plugin:
+    name: ras-mutator
+    image_and_tag: lawlerseth/ras-mutator:v0.1.1
+    command:
+        - ./h5rasedit
+        - wat
+        - -f
+        - jobs/muncie/muncie-{r1-e2-}ras-mutator.yml
+model_identifier:
+    name: Muncie
+    alternative: .p04
+inputs:
+    - input_id: 0403f0fd-a4f6-45d8-becc-bd929a3a9f2c
+      filename: s3://model-library/pilots/Muncie/Muncie.p04.tmp.hdf
+      internal_paths:
+        - path_id: bf99f9b1-2010-4863-a9da-5dda40ae7298
+          pathname: /Event Conditions/15696.24
+        - path_id: 8b37bbdc-e813-410c-99a3-67148a958330
+          pathname: /Event Conditions/789563.89
+    - input_id: 9c09391f-a78e-47c2-858f-ccaeae902336
+      filename: s3://model-library/pilots/Muncie/Muncie.b04
+      internal_paths:
+        - path_id: cd407bba-50bb-4cce-96cf-e658775d3051
+          pathname: BreachLocationA
+        - path_id: 17ff62f5-4473-4aba-8a52-0b347fb0ac09
+          pathname: Boundary4
+outputs:
+    - output_id: bfcbffdb-a029-44c0-ac54-bbd908f36510
+      filename: s3://model-library/wat/jobs/Muncie/{r1-e2-}/Muncie.p04.tmp.hdf
+    - output_id: 2b8e7387-a543-451f-90e5-0ba099526ee3
+      filename: s3://model-library/wat/jobs/Muncie/{r1-e2-}/Muncie.b04

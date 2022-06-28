@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	fmt.Print("wat-go-sdk")
+	fmt.Println("wat-go-sdk")
 }
