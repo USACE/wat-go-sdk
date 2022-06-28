@@ -22,7 +22,7 @@ type Job struct {
 
 //provisionresources
 func (job Job) ProvisionResources() error {
-
+	//make sure job arn list is provisioned for the total number of events to be computed.
 	//depends on cloud-resources//
 	return errors.New("resources!!!")
 }
@@ -37,12 +37,15 @@ func (job Job) DestructResources() error {
 //GeneratePayloads
 func (job Job) GeneratePayloads(fs filestore.FileStore) error {
 	//generate payloads for all events up front?
-	for i := job.EventStartIndex; i < job.EventStartIndex; i++ {
+	for eventIndex := job.EventStartIndex; eventIndex < job.EventStartIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
-		outputDestinationPath := fmt.Sprintf("%v/%v%v/", job.OutputDestination.Path, "event_", i)
+		outputDestinationPath := fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
 		for _, n := range job.LinkedManifests {
 			fmt.Println(n.ImageAndTag, outputDestinationPath)
-			payload := plugindatamodel.ModelPayload{}
+			payload, err := job.generatePayload(n, eventIndex)
+			if err != nil {
+				panic(err)
+			}
 			bytes, err := yaml.Marshal(payload)
 			if err != nil {
 				panic(err)
@@ -59,16 +62,31 @@ func (job Job) GeneratePayloads(fs filestore.FileStore) error {
 	}
 	return errors.New("payloads!!!")
 }
-func (job Job) ComputeEvent(eventNumber int) error {
+func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.LinkedManifests {
-		submitTask(job.resources, n)
+		job.submitTask(n, eventIndex)
 	}
-	return errors.New(fmt.Sprintf("computing event %v", eventNumber))
+	return errors.New(fmt.Sprintf("computing event %v", eventIndex))
 }
 
-func submitTask(resources []ProvisionedResources, manifest plugindatamodel.LinkedModelManifest) error {
+func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventindex int) error {
 	//depends on cloud-resources//
+	dependencies, err := job.findDependencies(manifest, eventindex)
+	if err != nil {
+		panic("woah!")
+	} else {
+		fmt.Print(dependencies)
+	}
 	//submit to batch.
+	batchjobarn := "batch arn returned."
+	//set job arn
+	for _, resource := range job.resources {
+		if resource.LinkedManifest.ManifestID == manifest.ManifestID {
+			offsetIndex := eventindex - job.EventStartIndex //incase we start at a non zero index..
+			resource.JobARN[offsetIndex] = &batchjobarn
+			break
+		}
+	}
 	return errors.New("task for " + manifest.Plugin.Name)
 }
 func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
@@ -87,7 +105,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 						ResourceInfo: plugindatamodel.ResourceInfo{
 							Store: job.OutputDestination.Store,
 							Root:  job.OutputDestination.Root,
-							Path:  job.OutputDestination.Path + output.FileName,
+							Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
 						},
 						InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 					}
@@ -131,7 +149,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 			ResourceInfo: plugindatamodel.ResourceInfo{
 				Store: job.OutputDestination.Store,
 				Root:  job.OutputDestination.Root,
-				Path:  job.OutputDestination.Path + output.FileName,
+				Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
 			},
 			InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 		}
@@ -141,13 +159,14 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 }
 func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest, eventindex int) ([]*string, error) {
 	dependencies := make([]*string, 0)
+	offsetIndex := eventindex - job.EventStartIndex
 	for _, input := range lm.Inputs {
 		foundMatch := false
 		for _, provisionedresource := range job.resources {
 			for _, outputs := range provisionedresource.LinkedManifest.Outputs {
 				if input.Id == outputs.Id {
 					//yay we found a match
-					dependencies = append(dependencies, provisionedresource.JobARN[eventindex])
+					dependencies = append(dependencies, provisionedresource.JobARN[offsetIndex])
 					foundMatch = true
 					break
 				}
