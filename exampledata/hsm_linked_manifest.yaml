@@ -8,16 +8,16 @@ plugin:
 model_identifier:
 inputs:
   - filename: event_configuration.json
-    source_data_identifier: 1 
+    source_data_identifier: 9
   - filename: hsm.json
-    source_data_identifier: 0 #this is technically in the wat project directory
+    source_data_identifier: 3
 outputs:
   - filename: hsm1.csv
-    id: 2
+    id: 11
   - filename: hsm2.csv
-    id: 3
+    id: 12
   - filename: hsm3.dss
-    id: 4
+    id: 13
     internal_paths:
     - pathname: /a/b/c/d/e/f/
-      id: 5
+      id: 14

@@ -10,22 +10,22 @@ model_identifier:
     alternative: .p04
 inputs:
   - filename: Muncie.p04.tmp.hdf
-    source_data_identifier: 0 ## in this case this is the original unmodified file, it is not coming from a plugin, but rather the "root directory"
+    source_data_identifier: 4
     internal_paths: ## there might be dozens, each a different type.
       - pathname: '/Event Conditions/15696.24'
-        source_data_identifier: 1
+        source_data_identifier: 11
       - pathname: '/Event Conditions/789563.89'
-        source_data_identifier: 2
+        source_data_identifier: 12
   - filename: Muncie.b04
-    source_data_identifier: 0
+    source_data_identifier: 5
     internal_paths:
       - pathname: 'BreachLocationA' 
-        source_data_identifier: 6
+        source_data_identifier: 10
       - pathname: 'Boundary4' # not sure how these are actually stored.
-        source_path_identifier: 5
-        source_file_identifier: 4
+        source_path_identifier: 14
+        source_file_identifier: 13
 outputs:
   - filename: Muncie.p04.tmp.hdf
-    id: 7
+    id: 15
   - filename: Muncie.b04
-    id: 8
+    id: 16

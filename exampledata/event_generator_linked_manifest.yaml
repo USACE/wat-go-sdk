@@ -9,7 +9,7 @@ model_identifier:
     name: EG
 inputs:
   - filename: eg.json
-    source_data_identifier: 0 #technically this is in the wat model directory 
+    source_data_identifier: 1  
 outputs:
   - filename: event_configuration.json
-    id: 1
+    id: 9
