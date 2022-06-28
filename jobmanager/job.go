@@ -74,7 +74,7 @@ func submitTask(resources []ProvisionedResources, manifest plugindatamodel.Linke
 func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
 	payload := plugindatamodel.ModelPayload{}
 	payload.EventIndex = eventindex
-	payload.Id = 1 //"make a uuid"
+	payload.Id = "make a uuid"
 	for _, input := range lm.Inputs {
 		foundMatch := false
 		for _, provisionedresource := range job.resources {
@@ -139,7 +139,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 	}
 	return payload, nil
 }
-func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest) ([]*string, error) {
+func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest, eventindex int) ([]*string, error) {
 	dependencies := make([]*string, 0)
 	for _, input := range lm.Inputs {
 		foundMatch := false
@@ -147,7 +147,7 @@ func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest) ([]*stri
 			for _, outputs := range provisionedresource.LinkedManifest.Outputs {
 				if input.Id == outputs.Id {
 					//yay we found a match
-					dependencies = append(dependencies, provisionedresource.JobARN)
+					dependencies = append(dependencies, provisionedresource.JobARN[eventindex])
 					foundMatch = true
 					break
 				}

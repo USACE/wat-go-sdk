@@ -2,7 +2,7 @@ package plugindatamodel
 
 //LinkedModelManifest
 type LinkedModelManifest struct {
-	ManifestID      int `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	ManifestID      string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
 	Plugin          `json:"plugin" yaml:"plugin"`
 	ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
 	Inputs          []LinkedFileData `json:"inputs" yaml:"inputs"`
