@@ -1,0 +1,18 @@
+manifest_id: 3331
+plugin:
+  name: hydrograph_scaler
+  image_and_tag: hydrographscaler:v0.0.1
+  command:
+    - ./main
+    - payload=
+model_identifier:
+    name: HSM
+inputs:
+  - filename: event_configuration.json
+  - filename: HSM.json
+outputs:
+  - filename: hsm1.csv
+  - filename: hsm2.csv
+  - filename: hsm3.dss
+    internal_path:
+      pathname: /a/b/c/d/e/f/
