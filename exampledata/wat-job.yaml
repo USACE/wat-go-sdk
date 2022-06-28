@@ -34,7 +34,6 @@ models:
             store: s3
             root: model-library
             path: /kanawha/models/Muncie.p04.tmp.hdf
-                - id: 4
         - id: 5
           resource_info:
             store: s3
