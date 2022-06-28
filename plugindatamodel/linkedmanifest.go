@@ -1,6 +1,16 @@
 package plugindatamodel
 
-//LinkedData
+//LinkedModelManifest
+type LinkedModelManifest struct {
+	ManifestID      int `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	Plugin          `json:"plugin" yaml:"plugin"`
+	ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
+	Inputs          []LinkedFileData `json:"inputs" yaml:"inputs"`
+	Outputs         []FileData       `json:"outputs" yaml:"outputs"`
+}
+
+//can use this struct to create a payload for a plugin
+//LinkedFileData
 type LinkedFileData struct {
 	//Id is an internal element generated to identify any data element.
 	Id int `json:"id,omitempty" yaml:"id,omitempty"`

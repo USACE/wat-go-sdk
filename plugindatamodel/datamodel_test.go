@@ -12,7 +12,7 @@ import (
 
 func TestReadPayload(t *testing.T) {
 	path := "../exampledata/payload_update.yaml"
-	payload := plugindatamodel.Payload{}
+	payload := plugindatamodel.ModelPayload{}
 	readobject(t, path, &payload)
 }
 
@@ -91,7 +91,7 @@ func TestWritePayload(t *testing.T) {
 			Path:  "/runs/realization_1/event_1",
 		},
 	}
-	payload := plugindatamodel.Payload{
+	payload := plugindatamodel.ModelPayload{
 		/*ModelIdentifier: plugindatamodel.ModelIdentifier{
 			Name:        "Muncie",
 			Alternative: ".p04",
