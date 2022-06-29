@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/usace/wat-go-sdk/plugindatamodel"
 )
 
@@ -94,7 +95,7 @@ func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventInd
 func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
 	payload := plugindatamodel.ModelPayload{}
 	payload.EventIndex = eventindex
-	payload.Id = "make a uuid"
+	payload.Id = uuid.New().String()
 	for _, input := range lm.Inputs {
 		foundMatch := false
 		for _, provisionedresource := range job.resources {
@@ -102,7 +103,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 				if input.Id == output.Id {
 					//yay we found a match
 					resourcedInput := plugindatamodel.ResourcedFileData{
-						Id:       "", //make a uuid
+						//Id:       uuid.New().String(),
 						FileName: input.FileName,
 						ResourceInfo: plugindatamodel.ResourceInfo{
 							Store: job.OutputDestination.Store,
@@ -146,7 +147,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 	//@TODO set output destinations!!
 	for _, output := range lm.Outputs {
 		resourcedOutput := plugindatamodel.ResourcedFileData{
-			Id:       "", //make a uuid
+			//Id:       uuid.New().String(),
 			FileName: output.FileName,
 			ResourceInfo: plugindatamodel.ResourceInfo{
 				Store: job.OutputDestination.Store,
