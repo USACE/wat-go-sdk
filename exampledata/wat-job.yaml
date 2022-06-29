@@ -62,16 +62,16 @@ models:
 linked_manifests: #could be stored in a database rather than files on a 
   - store: s3
     root: model-library
-    path: /kanawha/models/event_generator_linked_manifest.yaml
+    path: ../exampledata/event_generator_linked_manifest.yaml
   - store: s3
     root: model-library
-    path: /kanawha/models/hsm_linked_manifest.yaml
+    path: ../exampledata/hsm_linked_manifest.yaml
   - store: s3
     root: model-library
-    path: /kanawha/models/fc_linked_manifest.yaml
+    path: ../exampledata/fc_linked_manifest.yaml
   - store: s3
     root: model-library
-    path: /kanawha/models/ras_mutator_linked_manifest.yaml
+    path: ../exampledata/ras_mutator_linked_manifest.yaml
 #  - store: s3
 #    root: model-library
 #    path: /kanawha/models/ras_runner_linked_manifest.yaml

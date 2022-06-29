@@ -1,6 +1,7 @@
 package jobmanager_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,24 @@ func TestReadJobManifest(t *testing.T) {
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := jobmanager.JobManifest{}
 	readobject(t, path, &jobManifest)
+}
+func TestComputePayloads(t *testing.T) {
+	//read a jobmanifest into memory
+	path := "../exampledata/wat-job.yaml"
+	jobManifest := jobmanager.JobManifest{}
+	readobject(t, path, &jobManifest)
+	//construct a job manager
+	jobManager, err := jobmanager.Init(jobManifest)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	//compute...
+	err = jobManager.ProcessJob()
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
 }
 func readobject(t *testing.T, path string, object interface{}) {
 	file, err := os.Open(path)
