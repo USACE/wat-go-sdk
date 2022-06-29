@@ -1,0 +1,9 @@
+payload_id: f83b1a16-ea1a-4ca1-ab94-9fa2c4431ae8
+event_index: 0
+inputs: []
+outputs:
+    - filename: event_configuration.json
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/event_configuration.json

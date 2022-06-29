@@ -78,4 +78,4 @@ linked_manifests: #could be stored in a database rather than files on a
 output_destination:
   store: s3
   root: cloud-wat-dev
-  path: /kanawha/runs/
+  path: ../exampledata/runs/

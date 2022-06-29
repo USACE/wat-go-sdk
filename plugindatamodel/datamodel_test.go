@@ -17,7 +17,7 @@ func TestReadPayload(t *testing.T) {
 }
 
 func TestReadLinkedManifest(t *testing.T) {
-	path := "../exampledata/event_generator_linked_manifest.yaml"
+	path := "../exampledata/ras_mutator_linked_manifest.yaml"
 	linkedmanifest := plugindatamodel.LinkedModelManifest{}
 	readobject(t, path, &linkedmanifest)
 }

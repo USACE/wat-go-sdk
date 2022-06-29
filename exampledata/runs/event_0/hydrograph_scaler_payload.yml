@@ -1,0 +1,24 @@
+payload_id: 72f16cc6-425d-4ebe-ba66-ae5536c60593
+event_index: 0
+inputs:
+    - filename: event_configuration.json
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/event_configuration.json
+outputs:
+    - filename: hsm1.csv
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/hsm1.csv
+    - filename: hsm2.csv
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/hsm2.csv
+    - filename: hsm3.dss
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/hsm3.dss

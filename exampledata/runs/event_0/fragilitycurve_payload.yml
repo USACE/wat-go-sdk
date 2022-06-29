@@ -1,0 +1,14 @@
+payload_id: fe971009-200f-45ec-8e8e-9af57bb363b4
+event_index: 0
+inputs:
+    - filename: event_configuration.json
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/event_configuration.json
+outputs:
+    - filename: fc1.csv
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/fc1.csv

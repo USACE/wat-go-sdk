@@ -1,0 +1,14 @@
+payload_id: 63eb9d61-b4cc-42ee-9729-4edaebe6d9e4
+event_index: 0
+inputs: []
+outputs:
+    - filename: Muncie.p04.tmp.hdf
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/Muncie.p04.tmp.hdf
+    - filename: Muncie.b04
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/Muncie.b04

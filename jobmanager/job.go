@@ -3,9 +3,11 @@ package jobmanager
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/usace/wat-go-sdk/plugindatamodel"
+	"gopkg.in/yaml.v3"
 )
 
 //Job
@@ -46,15 +48,21 @@ func (job Job) GeneratePayloads() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(payload)
-			/*bytes, err := yaml.Marshal(payload)
+			//fmt.Println(payload)
+			bytes, err := yaml.Marshal(payload)
 			if err != nil {
-				panic(err)
-			}*/
+				return err
+			}
+			fmt.Println("")
+			fmt.Println(string(bytes))
 			//put payload in s3
 			path := outputDestinationPath + n.Plugin.Name + "_payload.yml"
 			fmt.Println("putting object in fs:", path)
 			//_, err = fs.PutObject(path, bytes)
+			if _, err = os.Stat(path); os.IsNotExist(err) {
+				os.MkdirAll(outputDestinationPath, 0644)
+			}
+			err = os.WriteFile(path, bytes, 0644)
 			if err != nil {
 				fmt.Println("failure to push payload to filestore:", err)
 				return err
@@ -114,6 +122,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 						InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 					}
 					//check if there are internal file paths
+					fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(input.InternalPaths), input.SourceDataId))
 					if len(input.InternalPaths) > 0 {
 						panic("oh no... do something fancy?")
 					}
@@ -131,9 +140,41 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 			for _, model := range job.Models {
 				for _, file := range model.Files {
 					if file.Id == input.SourceDataId {
-						payload.Inputs = append(payload.Inputs, file)
 						foundMatch = true
+						//check if there are internal file paths
+						fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(input.InternalPaths), input.SourceDataId))
+						if len(input.InternalPaths) > 0 {
+							//panic("oh no... do something fancy?")
+							internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(input.InternalPaths))
+							for idx, internalPath := range input.InternalPaths {
+								for _, linkedManifest := range job.LinkedManifests {
+									for _, output := range linkedManifest.Outputs {
+										if internalPath.SourceFileID == output.Id {
+											//yay we found a match
+											resourcedInput := plugindatamodel.ResourcedInternalPathData{
+												PathName:     internalPath.PathName,
+												FileName:     output.FileName,
+												InternalPath: internalPath.PathName,
+												ResourceInfo: plugindatamodel.ResourceInfo{
+													Store: job.OutputDestination.Store,
+													Root:  job.OutputDestination.Root,
+													Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
+												},
+											}
+											internalPaths[idx] = resourcedInput
+											//break
+										}
+									}
+									if foundMatch {
+										break
+									}
+								}
+								file.InternalPaths = internalPaths
+								break
+							}
+						}
 						break
+
 					}
 				}
 				if foundMatch {
