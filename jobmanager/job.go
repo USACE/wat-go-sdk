@@ -37,14 +37,14 @@ func (job Job) DestructResources() error {
 //GeneratePayloads
 func (job Job) GeneratePayloads() error {
 	//generate payloads for all events up front?
-	for eventIndex := job.EventStartIndex; eventIndex < job.EventStartIndex; eventIndex++ {
+	for eventIndex := job.EventStartIndex; eventIndex < job.EventEndIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
 		outputDestinationPath := fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
 		for _, n := range job.LinkedManifests {
 			fmt.Println(n.ImageAndTag, outputDestinationPath)
 			payload, err := job.generatePayload(n, eventIndex)
 			if err != nil {
-				panic(err)
+				return err
 			}
 			fmt.Println(payload)
 			/*bytes, err := yaml.Marshal(payload)
@@ -57,11 +57,12 @@ func (job Job) GeneratePayloads() error {
 			//_, err = fs.PutObject(path, bytes)
 			if err != nil {
 				fmt.Println("failure to push payload to filestore:", err)
-				panic(err)
+				return err
 			}
 		}
 	}
-	return errors.New("payloads!!!")
+	fmt.Println("payloads!!!")
+	return nil
 }
 func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.LinkedManifests {
@@ -74,7 +75,7 @@ func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventInd
 	//depends on cloud-resources//
 	dependencies, err := job.findDependencies(manifest, eventIndex)
 	if err != nil {
-		panic("woah!")
+		return err
 	} else {
 		fmt.Print(dependencies)
 	}
@@ -98,9 +99,9 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 	payload.Id = uuid.New().String()
 	for _, input := range lm.Inputs {
 		foundMatch := false
-		for _, provisionedresource := range job.resources {
-			for _, output := range provisionedresource.LinkedManifest.Outputs {
-				if input.Id == output.Id {
+		for _, linkedManifest := range job.LinkedManifests {
+			for _, output := range linkedManifest.Outputs {
+				if input.SourceDataId == output.Id {
 					//yay we found a match
 					resourcedInput := plugindatamodel.ResourcedFileData{
 						//Id:       uuid.New().String(),
@@ -129,7 +130,7 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 			//this will trigger on all wat job model files.
 			for _, model := range job.Models {
 				for _, file := range model.Files {
-					if file.Id == input.Id {
+					if file.Id == input.SourceDataId {
 						payload.Inputs = append(payload.Inputs, file)
 						foundMatch = true
 						break

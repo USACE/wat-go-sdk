@@ -1,6 +1,6 @@
 job_identifier: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
 event_start_index: 0
-event_end_index: 100000
+event_end_index: 1
 models:
   - name: EG
     files:
