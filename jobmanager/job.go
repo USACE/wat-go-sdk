@@ -4,9 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USACE/filestore"
 	"github.com/usace/wat-go-sdk/plugindatamodel"
-	"gopkg.in/yaml.v3"
 )
 
 //Job
@@ -21,9 +19,10 @@ type Job struct {
 }
 
 //provisionresources
-func (job Job) ProvisionResources() error {
+func (job *Job) ProvisionResources() error {
 	//make sure job arn list is provisioned for the total number of events to be computed.
 	//depends on cloud-resources//
+	job.resources = make([]ProvisionedResources, len(job.LinkedManifests))
 	return errors.New("resources!!!")
 }
 
@@ -35,7 +34,7 @@ func (job Job) DestructResources() error {
 }
 
 //GeneratePayloads
-func (job Job) GeneratePayloads(fs filestore.FileStore) error {
+func (job Job) GeneratePayloads() error {
 	//generate payloads for all events up front?
 	for eventIndex := job.EventStartIndex; eventIndex < job.EventStartIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
@@ -46,14 +45,15 @@ func (job Job) GeneratePayloads(fs filestore.FileStore) error {
 			if err != nil {
 				panic(err)
 			}
-			bytes, err := yaml.Marshal(payload)
+			fmt.Println(payload)
+			/*bytes, err := yaml.Marshal(payload)
 			if err != nil {
 				panic(err)
-			}
+			}*/
 			//put payload in s3
 			path := outputDestinationPath + n.Plugin.Name + "_payload.yml"
 			fmt.Println("putting object in fs:", path)
-			_, err = fs.PutObject(path, bytes)
+			//_, err = fs.PutObject(path, bytes)
 			if err != nil {
 				fmt.Println("failure to push payload to filestore:", err)
 				panic(err)
@@ -196,5 +196,7 @@ func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest, eventind
 			}
 		}
 	}
+	//deduplicate multiple arn references
+
 	return dependencies, nil
 }

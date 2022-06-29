@@ -1,11 +1,11 @@
-job_identifier: 1234
+job_identifier: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
 event_start_index: 0
 event_end_index: 100000
 models:
   - model_identification:
       name: EG
       files:
-        - id: 1
+        - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510
           resource_info:
             store: s3
             root: model-library
@@ -13,7 +13,7 @@ models:
   - model_identification:
       name: fc
       files:
-        - id: 2
+        - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
           resource_info:
             store: s3
             root: model-library
@@ -21,7 +21,7 @@ models:
   - model_identification:
       name: hsm
       files:
-        - id: 3
+        - id: 4a04b3f9-2413-4143-865a-769a9432c33f
           resource_info:
             store: s3
             root: model-library
@@ -30,27 +30,27 @@ models:
       name: Muncie
       alternative: .p04
       files:
-        - id: 4
+        - id: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2
           resource_info:
             store: s3
             root: model-library
             path: /kanawha/models/Muncie.p04.tmp.hdf
-        - id: 5
+        - id: cb950b3f-e4ff-4109-936c-5991ad42fb45
           resource_info:
             store: s3
             root: model-library
             path: /kanawha/models/Muncie.b04
-        - id: 6
+        - id: ea5ee62f-1b98-4ae2-bd50-bce6b9511615
           resource_info:
             store: s3
             root: model-library
             path: /kanawha/models/Muncie.x04
-        - id: 7
+        - id: 491c7e8a-517a-4933-8b25-27eb64a38f8e
           resource_info:
             store: s3
             root: model-library
             path: /kanawha/models/Muncie.c04
-        - id: 8
+        - id: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
           resource_info:
             store: s3
             root: model-library
@@ -72,10 +72,10 @@ linked_manifests: #could be stored in a database rather than files on a
       store: s3
       root: model-library
       path: /kanawha/models/ras_mutator_linked_manifest.yaml
-  - resource_info:
-      store: s3
-      root: model-library
-      path: /kanawha/models/ras_runner_linked_manifest.yaml
+#  - resource_info:
+#      store: s3
+#      root: model-library
+#      path: /kanawha/models/ras_runner_linked_manifest.yaml
 output_destination:
   resource_info:
     store: s3

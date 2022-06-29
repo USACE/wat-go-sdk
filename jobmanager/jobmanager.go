@@ -3,23 +3,20 @@ package jobmanager
 import (
 	"errors"
 	"fmt"
-
-	"github.com/USACE/filestore"
-	"github.com/aws/aws-sdk-go/service/batch"
 )
 
 //JobManager
 type JobManager struct {
-	job           Job
-	store         filestore.FileStore
-	captainCrunch *batch.Batch
+	job Job
+	//store         filestore.FileStore
+	//captainCrunch *batch.Batch
 }
 
-func Init(job Job, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
+func Init(job Job) JobManager { //, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
 	return JobManager{
-		job:           job,
-		store:         fs,
-		captainCrunch: batchClient,
+		job: job,
+		//store:         fs,
+		//captainCrunch: batchClient,
 	}
 }
 func (jm JobManager) ProcessJob() error {
@@ -36,7 +33,7 @@ func (jm JobManager) ProcessJob() error {
 			}
 		}
 	}()
-	err = jm.job.GeneratePayloads(jm.store)
+	err = jm.job.GeneratePayloads() //jm.store
 	fmt.Println(err)
 	//create error channel.
 	//create waitgroups to throttle compute resources?
