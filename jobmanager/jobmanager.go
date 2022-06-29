@@ -12,12 +12,14 @@ type JobManager struct {
 	//captainCrunch *batch.Batch
 }
 
-func Init(job Job) JobManager { //, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
-	return JobManager{
-		job: job,
-		//store:         fs,
-		//captainCrunch: batchClient,
+func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
+	jobManager := JobManager{}
+	job, err := jobManifest.ConvertToJob()
+	if err != nil {
+		return jobManager, err
 	}
+	jobManager.job = job
+	return jobManager, nil
 }
 func (jm JobManager) ProcessJob() error {
 	err := jm.job.ProvisionResources()
