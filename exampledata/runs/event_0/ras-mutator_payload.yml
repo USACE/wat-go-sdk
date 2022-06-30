@@ -1,6 +1,45 @@
-payload_id: 63eb9d61-b4cc-42ee-9729-4edaebe6d9e4
+payload_id: e74db08e-f79a-44d8-b469-9d4ef1d952c8
 event_index: 0
-inputs: []
+inputs:
+    - id: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2
+      filename: Muncie.p04.tmp.hdf
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/Muncie.p04.tmp.hdf
+      internal_paths:
+        - pathname: /Event Conditions/15696.24
+          filename: hsm1.csv
+          resource_info:
+            store: s3
+            root: cloud-wat-dev
+            path: ../exampledata/runs/event_0/hsm1.csv
+        - pathname: /Event Conditions/789563.89
+          filename: hsm2.csv
+          resource_info:
+            store: s3
+            root: cloud-wat-dev
+            path: ../exampledata/runs/event_0/hsm2.csv
+    - id: cb950b3f-e4ff-4109-936c-5991ad42fb45
+      filename: Muncie.b04
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/Muncie.b04
+      internal_paths:
+        - pathname: BreachLocationA
+          filename: fc1.csv
+          resource_info:
+            store: s3
+            root: cloud-wat-dev
+            path: ../exampledata/runs/event_0/fc1.csv
+        - pathname: Boundary4
+          filename: hsm3.dss
+          internal_path: /a/b/c/d/e/f/
+          resource_info:
+            store: s3
+            root: cloud-wat-dev
+            path: ../exampledata/runs/event_0/hsm3.dss
 outputs:
     - filename: Muncie.p04.tmp.hdf
       resource_info:

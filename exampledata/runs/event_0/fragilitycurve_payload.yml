@@ -1,4 +1,4 @@
-payload_id: fe971009-200f-45ec-8e8e-9af57bb363b4
+payload_id: 81564535-1a5d-4721-a4a3-6683dde50dbd
 event_index: 0
 inputs:
     - filename: event_configuration.json
@@ -6,6 +6,12 @@ inputs:
         store: s3
         root: cloud-wat-dev
         path: ../exampledata/runs/event_0/event_configuration.json
+    - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+      filename: fc.json
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/fc.json
 outputs:
     - filename: fc1.csv
       resource_info:

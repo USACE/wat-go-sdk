@@ -1,4 +1,4 @@
-payload_id: 72f16cc6-425d-4ebe-ba66-ae5536c60593
+payload_id: f4d52a8d-9f71-4f0d-a49e-f9a549eca265
 event_index: 0
 inputs:
     - filename: event_configuration.json
@@ -6,6 +6,12 @@ inputs:
         store: s3
         root: cloud-wat-dev
         path: ../exampledata/runs/event_0/event_configuration.json
+    - id: 4a04b3f9-2413-4143-865a-769a9432c33f
+      filename: hsm.json
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/hsm.json
 outputs:
     - filename: hsm1.csv
       resource_info:

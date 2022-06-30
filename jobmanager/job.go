@@ -151,10 +151,16 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 									for _, output := range linkedManifest.Outputs {
 										if internalPath.SourceFileID == output.Id {
 											//yay we found a match
+											ip := ""
+											if len(output.InternalPaths) > 0 {
+												//@TODO: match based on internal path id.
+												//match based on internalpath.sourcepathid.
+												ip = output.InternalPaths[0].PathName
+											}
 											resourcedInput := plugindatamodel.ResourcedInternalPathData{
 												PathName:     internalPath.PathName,
 												FileName:     output.FileName,
-												InternalPath: internalPath.PathName,
+												InternalPath: ip,
 												ResourceInfo: plugindatamodel.ResourceInfo{
 													Store: job.OutputDestination.Store,
 													Root:  job.OutputDestination.Root,
@@ -165,14 +171,11 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 											//break
 										}
 									}
-									if foundMatch {
-										break
-									}
 								}
 								file.InternalPaths = internalPaths
-								break
 							}
 						}
+						payload.Inputs = append(payload.Inputs, file)
 						break
 
 					}
