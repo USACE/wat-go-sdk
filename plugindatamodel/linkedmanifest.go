@@ -27,6 +27,6 @@ type LinkedInternalPathData struct {
 	Id string `json:"id,omitempty" yaml:"id,omitempty"`
 	//PathName describes the internal path location to the data needed or produced.
 	PathName     string `json:"pathname" yaml:"pathname"`
-	SourcePathID string `json:"source_path_identifier,omitempty" yaml:"source_path_name,omitempty"`
+	SourcePathID string `json:"source_path_identifier,omitempty" yaml:"source_path_identifier,omitempty"`
 	SourceFileID string `json:"source_file_identifier" yaml:"source_file_identifier"`
 }

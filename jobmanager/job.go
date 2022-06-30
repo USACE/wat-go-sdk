@@ -122,9 +122,38 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 						InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 					}
 					//check if there are internal file paths
-					fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(input.InternalPaths), input.SourceDataId))
 					if len(input.InternalPaths) > 0 {
-						panic("oh no... do something fancy?")
+						internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(input.InternalPaths))
+						for idx, internalPath := range input.InternalPaths {
+							for _, linkedManifest := range job.LinkedManifests {
+								for _, output := range linkedManifest.Outputs {
+									if internalPath.SourceFileID == output.Id {
+										//yay we found a match
+										ip := ""
+										if len(output.InternalPaths) > 0 {
+											for _, internalpath := range output.InternalPaths {
+												if internalpath.Id == internalPath.SourcePathID {
+													ip = internalpath.PathName
+												}
+											}
+										}
+										resourcedInputinternalpath := plugindatamodel.ResourcedInternalPathData{
+											PathName:     internalPath.PathName,
+											FileName:     output.FileName,
+											InternalPath: ip,
+											ResourceInfo: plugindatamodel.ResourceInfo{
+												Store: job.OutputDestination.Store,
+												Root:  job.OutputDestination.Root,
+												Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
+											},
+										}
+										internalPaths[idx] = resourcedInputinternalpath
+										//break
+									}
+								}
+							}
+						}
+						resourcedInput.InternalPaths = internalPaths
 					}
 					payload.Inputs = append(payload.Inputs, resourcedInput)
 					foundMatch = true
@@ -153,9 +182,11 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 											//yay we found a match
 											ip := ""
 											if len(output.InternalPaths) > 0 {
-												//@TODO: match based on internal path id.
-												//match based on internalpath.sourcepathid.
-												ip = output.InternalPaths[0].PathName
+												for _, internalpath := range output.InternalPaths {
+													if internalpath.Id == internalPath.SourcePathID {
+														ip = internalpath.PathName
+													}
+												}
 											}
 											resourcedInput := plugindatamodel.ResourcedInternalPathData{
 												PathName:     internalPath.PathName,
