@@ -1,7 +1,6 @@
 package jobmanager
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -49,5 +48,6 @@ func (jm JobManager) ProcessJob() error {
 	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
 	err = jm.job.DestructResources()
 	fmt.Println(err)
-	return errors.New("Job Processed!")
+	fmt.Println("Job Processed!")
+	return nil
 }

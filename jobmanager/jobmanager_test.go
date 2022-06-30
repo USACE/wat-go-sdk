@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/usace/wat-go-sdk/jobmanager"
@@ -31,6 +32,33 @@ func TestComputePayloads(t *testing.T) {
 	err = jobManager.ProcessJob()
 	if err != nil {
 		fmt.Println(err)
+		t.Fail()
+	}
+	pathoutput := "../exampledata/runs/event_0/ras-mutator_payload.yml"
+	outputfile, err := os.Open(pathoutput)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	outputbytes, err := ioutil.ReadAll(outputfile)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	pathcomparison := "../exampledata/ras-mutator_payload.yml"
+	comparisonfile, err := os.Open(pathcomparison)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	comparisonbytes, err := ioutil.ReadAll(comparisonfile)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	if !reflect.DeepEqual(outputbytes, comparisonbytes) {
+		fmt.Println(string(outputbytes))
+		fmt.Println(string(comparisonbytes))
 		t.Fail()
 	}
 }

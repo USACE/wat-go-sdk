@@ -76,7 +76,8 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.LinkedManifests {
 		job.submitTask(n, eventIndex)
 	}
-	return errors.New(fmt.Sprintf("computing event %v", eventIndex))
+	fmt.Println(fmt.Sprintf("computing event %v", eventIndex))
+	return nil
 }
 
 func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventIndex int) error {
@@ -104,7 +105,7 @@ func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventInd
 func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
 	payload := plugindatamodel.ModelPayload{}
 	payload.EventIndex = eventindex
-	payload.Id = uuid.New().String()
+	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventindex))).String()
 	for _, input := range lm.Inputs {
 		foundMatch := false
 		for _, linkedManifest := range job.LinkedManifests {
