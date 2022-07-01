@@ -102,6 +102,56 @@ func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventInd
 	}
 	return errors.New("task for " + manifest.Plugin.Name)
 }
+func (job Job) linkToModelData(linkedFile plugindatamodel.LinkedFileData, eventIndex int) (plugindatamodel.ResourcedFileData, error) {
+	returnFile := plugindatamodel.ResourcedFileData{}
+	for _, model := range job.Models {
+		for _, file := range model.Files {
+			if file.Id == linkedFile.SourceDataId {
+				//check if there are internal file paths
+				returnFile.Id = file.Id
+				returnFile.FileName = file.FileName
+				returnFile.ResourceInfo = file.ResourceInfo
+				fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(linkedFile.InternalPaths), linkedFile.SourceDataId))
+				if len(linkedFile.InternalPaths) > 0 {
+					//panic("oh no... do something fancy?")
+					internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
+					for idx, internalPath := range linkedFile.InternalPaths {
+						for _, linkedManifest := range job.LinkedManifests {
+							for _, output := range linkedManifest.Outputs {
+								if internalPath.SourceFileID == output.Id {
+									//yay we found a match
+									ip := ""
+									if len(output.InternalPaths) > 0 {
+										for _, internalpath := range output.InternalPaths {
+											if internalpath.Id == internalPath.SourcePathID {
+												ip = internalpath.PathName
+											}
+										}
+									}
+									resourcedInput := plugindatamodel.ResourcedInternalPathData{
+										PathName:     internalPath.PathName,
+										FileName:     output.FileName,
+										InternalPath: ip,
+										ResourceInfo: plugindatamodel.ResourceInfo{
+											Store: job.OutputDestination.Store, //what if it is a dss file in the model data area?
+											Root:  job.OutputDestination.Root,
+											Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName),
+										},
+									}
+									internalPaths[idx] = resourcedInput
+									//break
+								}
+							}
+						}
+						returnFile.InternalPaths = internalPaths
+					}
+				}
+				return returnFile, nil
+			}
+		}
+	}
+	return returnFile, errors.New("could not find a match")
+}
 func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
 	payload := plugindatamodel.ModelPayload{}
 	payload.EventIndex = eventindex
@@ -166,59 +216,11 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 			}
 		}
 		if !foundMatch {
-			//this will trigger on all wat job model files.
-			for _, model := range job.Models {
-				for _, file := range model.Files {
-					if file.Id == input.SourceDataId {
-						foundMatch = true
-						//check if there are internal file paths
-						fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(input.InternalPaths), input.SourceDataId))
-						if len(input.InternalPaths) > 0 {
-							//panic("oh no... do something fancy?")
-							internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(input.InternalPaths))
-							for idx, internalPath := range input.InternalPaths {
-								for _, linkedManifest := range job.LinkedManifests {
-									for _, output := range linkedManifest.Outputs {
-										if internalPath.SourceFileID == output.Id {
-											//yay we found a match
-											ip := ""
-											if len(output.InternalPaths) > 0 {
-												for _, internalpath := range output.InternalPaths {
-													if internalpath.Id == internalPath.SourcePathID {
-														ip = internalpath.PathName
-													}
-												}
-											}
-											resourcedInput := plugindatamodel.ResourcedInternalPathData{
-												PathName:     internalPath.PathName,
-												FileName:     output.FileName,
-												InternalPath: ip,
-												ResourceInfo: plugindatamodel.ResourceInfo{
-													Store: job.OutputDestination.Store,
-													Root:  job.OutputDestination.Root,
-													Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
-												},
-											}
-											internalPaths[idx] = resourcedInput
-											//break
-										}
-									}
-								}
-								file.InternalPaths = internalPaths
-							}
-						}
-						payload.Inputs = append(payload.Inputs, file)
-						break
-
-					}
-				}
-				if foundMatch {
-					break
-				}
+			file, err := job.linkToModelData(input, eventindex)
+			if err != nil {
+				return payload, err
 			}
-			if !foundMatch {
-				return payload, errors.New("failed to find a match to an input dependency")
-			}
+			payload.Inputs = append(payload.Inputs, file)
 		}
 	}
 	//@TODO set output destinations!!
