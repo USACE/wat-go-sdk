@@ -17,6 +17,11 @@ func TestReadJobManifest(t *testing.T) {
 	jobManifest := jobmanager.JobManifest{}
 	readobject(t, path, &jobManifest)
 }
+func TestReadLinkedManifest(t *testing.T) {
+	path := "../exampledata/ras_mutator_linked_manifest.yaml"
+	linkedmanifest := jobmanager.LinkedModelManifest{}
+	readobject(t, path, &linkedmanifest)
+}
 func TestComputePayloads(t *testing.T) {
 	//read a jobmanifest into memory
 	path := "../exampledata/wat-job.yaml"

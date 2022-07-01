@@ -16,11 +16,6 @@ func TestReadPayload(t *testing.T) {
 	readobject(t, path, &payload)
 }
 
-func TestReadLinkedManifest(t *testing.T) {
-	path := "../exampledata/ras_mutator_linked_manifest.yaml"
-	linkedmanifest := plugindatamodel.LinkedModelManifest{}
-	readobject(t, path, &linkedmanifest)
-}
 func TestReadManifest(t *testing.T) {
 	path := "../exampledata/manifest_update.yaml"
 	manifest := plugindatamodel.ModelManifest{}

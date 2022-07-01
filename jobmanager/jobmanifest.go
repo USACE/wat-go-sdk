@@ -28,10 +28,10 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 		Models:            jm.Models,
 		OutputDestination: jm.OutputDestination,
 	}
-	linkedManifests := make([]plugindatamodel.LinkedModelManifest, len(jm.LinkedManifestResources))
+	linkedManifests := make([]LinkedModelManifest, len(jm.LinkedManifestResources))
 	for idx, resourceInfo := range jm.LinkedManifestResources {
 		fmt.Println(resourceInfo.Path)
-		lm := plugindatamodel.LinkedModelManifest{}
+		lm := LinkedModelManifest{}
 		file, err := os.Open(resourceInfo.Path) //replace with filestore? injected?
 		if err != nil {
 			return job, err

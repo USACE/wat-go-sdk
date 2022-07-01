@@ -1,12 +1,14 @@
-package plugindatamodel
+package jobmanager
+
+import "github.com/usace/wat-go-sdk/plugindatamodel"
 
 //LinkedModelManifest
 type LinkedModelManifest struct {
-	ManifestID      string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
-	Plugin          `json:"plugin" yaml:"plugin"`
-	ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
-	Inputs          []LinkedFileData `json:"inputs" yaml:"inputs"`
-	Outputs         []FileData       `json:"outputs" yaml:"outputs"`
+	ManifestID                      string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	plugindatamodel.Plugin          `json:"plugin" yaml:"plugin"`
+	plugindatamodel.ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
+	Inputs                          []LinkedFileData           `json:"inputs" yaml:"inputs"`
+	Outputs                         []plugindatamodel.FileData `json:"outputs" yaml:"outputs"`
 }
 
 //can use this struct to create a payload for a plugin
