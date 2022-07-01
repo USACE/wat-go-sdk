@@ -131,56 +131,6 @@ func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventinde
 	payload.Outputs = outputs
 	return payload, nil
 }
-func (job Job) linkToModelData(linkedFile plugindatamodel.LinkedFileData, eventIndex int) (plugindatamodel.ResourcedFileData, error) {
-	returnFile := plugindatamodel.ResourcedFileData{}
-	for _, model := range job.Models {
-		for _, file := range model.Files {
-			if file.Id == linkedFile.SourceDataId {
-				//check if there are internal file paths
-				returnFile.Id = file.Id
-				returnFile.FileName = file.FileName
-				returnFile.ResourceInfo = file.ResourceInfo
-				fmt.Println(fmt.Sprintf("there are %v internal paths on input %v", len(linkedFile.InternalPaths), linkedFile.SourceDataId))
-				if len(linkedFile.InternalPaths) > 0 {
-					//panic("oh no... do something fancy?")
-					internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
-					for idx, internalPath := range linkedFile.InternalPaths {
-						for _, linkedManifest := range job.LinkedManifests {
-							for _, output := range linkedManifest.Outputs {
-								if internalPath.SourceFileID == output.Id {
-									//yay we found a match
-									ip := ""
-									if len(output.InternalPaths) > 0 {
-										for _, internalpath := range output.InternalPaths {
-											if internalpath.Id == internalPath.SourcePathID {
-												ip = internalpath.PathName
-											}
-										}
-									}
-									resourcedInput := plugindatamodel.ResourcedInternalPathData{
-										PathName:     internalPath.PathName,
-										FileName:     output.FileName,
-										InternalPath: ip,
-										ResourceInfo: plugindatamodel.ResourceInfo{
-											Store: job.OutputDestination.Store, //what if it is a dss file in the model data area?
-											Root:  job.OutputDestination.Root,
-											Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName),
-										},
-									}
-									internalPaths[idx] = resourcedInput
-									//break
-								}
-							}
-						}
-						returnFile.InternalPaths = internalPaths
-					}
-				}
-				return returnFile, nil
-			}
-		}
-	}
-	return returnFile, errors.New("could not find a match")
-}
 func (job Job) linkToPluginOutput(linkedFile plugindatamodel.LinkedFileData, eventIndex int) (plugindatamodel.ResourcedFileData, error) {
 	resourcedInput := plugindatamodel.ResourcedFileData{
 		FileName: linkedFile.FileName,
@@ -197,36 +147,12 @@ func (job Job) linkToPluginOutput(linkedFile plugindatamodel.LinkedFileData, eve
 				resourcedInput.Path = fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName)
 				//check if there are internal file paths
 				if len(linkedFile.InternalPaths) > 0 {
-					internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
-					for idx, internalPath := range linkedFile.InternalPaths {
-						for _, linkedManifest := range job.LinkedManifests {
-							for _, output := range linkedManifest.Outputs {
-								if internalPath.SourceFileID == output.Id {
-									//yay we found a match
-									ip := ""
-									if len(output.InternalPaths) > 0 {
-										for _, internalpath := range output.InternalPaths {
-											if internalpath.Id == internalPath.SourcePathID {
-												ip = internalpath.PathName
-											}
-										}
-									}
-									resourcedInputinternalpath := plugindatamodel.ResourcedInternalPathData{
-										PathName:     internalPath.PathName,
-										FileName:     output.FileName,
-										InternalPath: ip,
-										ResourceInfo: plugindatamodel.ResourceInfo{
-											Store: job.OutputDestination.Store,
-											Root:  job.OutputDestination.Root,
-											Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName),
-										},
-									}
-									internalPaths[idx] = resourcedInputinternalpath
-								}
-							}
-						}
+					//link internal paths if there are any.
+					resourcedInternalPaths, err := job.linkInternalPaths(linkedFile, eventIndex)
+					if err != nil {
+						return resourcedInput, err
 					}
-					resourcedInput.InternalPaths = internalPaths
+					resourcedInput.InternalPaths = resourcedInternalPaths
 				}
 				return resourcedInput, nil
 			}
@@ -234,9 +160,66 @@ func (job Job) linkToPluginOutput(linkedFile plugindatamodel.LinkedFileData, eve
 	}
 	return resourcedInput, errors.New("no link found")
 }
+func (job Job) linkInternalPaths(linkedFile plugindatamodel.LinkedFileData, eventIndex int) ([]plugindatamodel.ResourcedInternalPathData, error) {
+	internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
+	//currently not checking if a link is unsatisfied. it might be smart to error out if len(linkedFile.InternalPaths)!=numsuccessfullinks
+	for idx, internalPath := range linkedFile.InternalPaths {
+		for _, linkedManifest := range job.LinkedManifests {
+			for _, output := range linkedManifest.Outputs {
+				if internalPath.SourceFileID == output.Id {
+					//yay we found a match
+					ip := ""
+					if len(output.InternalPaths) > 0 {
+						for _, internalpath := range output.InternalPaths {
+							if internalpath.Id == internalPath.SourcePathID {
+								ip = internalpath.PathName
+							}
+						}
+					}
+					resourcedInput := plugindatamodel.ResourcedInternalPathData{
+						PathName:     internalPath.PathName,
+						FileName:     output.FileName,
+						InternalPath: ip,
+						ResourceInfo: plugindatamodel.ResourceInfo{
+							Store: job.OutputDestination.Store,
+							Root:  job.OutputDestination.Root,
+							Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName),
+						},
+					}
+					internalPaths[idx] = resourcedInput
+				}
+			}
+		}
+	}
+	return internalPaths, nil
+}
+func (job Job) linkToModelData(linkedFile plugindatamodel.LinkedFileData, eventIndex int) (plugindatamodel.ResourcedFileData, error) {
+	returnFile := plugindatamodel.ResourcedFileData{}
+	for _, model := range job.Models {
+		for _, file := range model.Files {
+			if file.Id == linkedFile.SourceDataId {
+				//check if there are internal file paths
+				returnFile.Id = file.Id
+				returnFile.FileName = file.FileName
+				returnFile.ResourceInfo = file.ResourceInfo
+				fmt.Printf("there are %v internal paths on input %v\n", len(linkedFile.InternalPaths), linkedFile.SourceDataId)
+				if len(linkedFile.InternalPaths) > 0 {
+					resourcedInternalPaths, err := job.linkInternalPaths(linkedFile, eventIndex)
+					if err != nil {
+						return returnFile, err
+					}
+					returnFile.InternalPaths = resourcedInternalPaths
+				}
+				return returnFile, nil
+			}
+		}
+	}
+	return returnFile, errors.New("could not find a match")
+}
+
 func (job Job) setPayloadOutputDestinations(linkedManifest plugindatamodel.LinkedModelManifest, eventIndex int) ([]plugindatamodel.ResourcedFileData, error) {
 	outputs := make([]plugindatamodel.ResourcedFileData, len(linkedManifest.Outputs))
-	for _, output := range linkedManifest.Outputs {
+	for idx, output := range linkedManifest.Outputs {
 		resourcedOutput := plugindatamodel.ResourcedFileData{
 			FileName: output.FileName,
 			ResourceInfo: plugindatamodel.ResourceInfo{
@@ -246,7 +229,7 @@ func (job Job) setPayloadOutputDestinations(linkedManifest plugindatamodel.Linke
 			},
 			InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 		}
-		outputs = append(outputs, resourcedOutput)
+		outputs[idx] = resourcedOutput
 	}
 	return outputs, nil
 }
