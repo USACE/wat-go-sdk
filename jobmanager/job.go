@@ -21,7 +21,7 @@ type Job struct {
 	resources         []ProvisionedResources
 }
 
-//provisionresources
+//ProvisionResources
 func (job *Job) ProvisionResources() error {
 	//make sure job arn list is provisioned for the total number of events to be computed.
 	//depends on cloud-resources//
@@ -29,7 +29,7 @@ func (job *Job) ProvisionResources() error {
 	return errors.New("resources!!!")
 }
 
-//destructresources
+//DestructResources
 func (job Job) DestructResources() error {
 
 	//depends on cloud-resources//
@@ -72,6 +72,8 @@ func (job Job) GeneratePayloads() error {
 	fmt.Println("payloads!!!")
 	return nil
 }
+
+//ComputeEvent
 func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.LinkedManifests {
 		job.submitTask(n, eventIndex)
@@ -79,7 +81,6 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	fmt.Println(fmt.Sprintf("computing event %v", eventIndex))
 	return nil
 }
-
 func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventIndex int) error {
 	//depends on cloud-resources//
 	dependencies, err := job.findDependencies(manifest, eventIndex)
@@ -101,6 +102,34 @@ func (job Job) submitTask(manifest plugindatamodel.LinkedModelManifest, eventInd
 		}
 	}
 	return errors.New("task for " + manifest.Plugin.Name)
+}
+func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
+	payload := plugindatamodel.ModelPayload{}
+	payload.EventIndex = eventindex
+	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventindex))).String()
+	//set inputs
+	for _, input := range lm.Inputs {
+		//try to link to other manifests first.
+		resourcedInput, err := job.linkToPluginOutput(input, eventindex)
+		if err != nil {
+			//if links were not satisfied, link to model data defined in job manifest
+			file, err := job.linkToModelData(input, eventindex)
+			if err != nil {
+				//if link not found, fail out.
+				return payload, err
+			}
+			payload.Inputs = append(payload.Inputs, file)
+		} else {
+			payload.Inputs = append(payload.Inputs, resourcedInput)
+		}
+	}
+	//set output destinations
+	outputs, err := job.setPayloadOutputDestinations(lm, eventindex)
+	if err != nil {
+		return payload, errors.New("could not set outputs")
+	}
+	payload.Outputs = outputs
+	return payload, nil
 }
 func (job Job) linkToModelData(linkedFile plugindatamodel.LinkedFileData, eventIndex int) (plugindatamodel.ResourcedFileData, error) {
 	returnFile := plugindatamodel.ResourcedFileData{}
@@ -205,37 +234,21 @@ func (job Job) linkToPluginOutput(linkedFile plugindatamodel.LinkedFileData, eve
 	}
 	return resourcedInput, errors.New("no link found")
 }
-func (job Job) generatePayload(lm plugindatamodel.LinkedModelManifest, eventindex int) (plugindatamodel.ModelPayload, error) {
-	payload := plugindatamodel.ModelPayload{}
-	payload.EventIndex = eventindex
-	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventindex))).String()
-	for _, input := range lm.Inputs {
-		resourcedInput, err := job.linkToPluginOutput(input, eventindex)
-		if err != nil {
-			file, err := job.linkToModelData(input, eventindex)
-			if err != nil {
-				return payload, err
-			}
-			payload.Inputs = append(payload.Inputs, file)
-		} else {
-			payload.Inputs = append(payload.Inputs, resourcedInput)
-		}
-	}
-	//@TODO set output destinations!!
-	for _, output := range lm.Outputs {
+func (job Job) setPayloadOutputDestinations(linkedManifest plugindatamodel.LinkedModelManifest, eventIndex int) ([]plugindatamodel.ResourcedFileData, error) {
+	outputs := make([]plugindatamodel.ResourcedFileData, len(linkedManifest.Outputs))
+	for _, output := range linkedManifest.Outputs {
 		resourcedOutput := plugindatamodel.ResourcedFileData{
-			//Id:       uuid.New().String(),
 			FileName: output.FileName,
 			ResourceInfo: plugindatamodel.ResourceInfo{
 				Store: job.OutputDestination.Store,
 				Root:  job.OutputDestination.Root,
-				Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventindex, output.FileName),
+				Path:  fmt.Sprintf("%vevent_%v/%v", job.OutputDestination.Path, eventIndex, output.FileName),
 			},
 			InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 		}
-		payload.Outputs = append(payload.Outputs, resourcedOutput)
+		outputs = append(outputs, resourcedOutput)
 	}
-	return payload, nil
+	return outputs, nil
 }
 func (job Job) findDependencies(lm plugindatamodel.LinkedModelManifest, eventindex int) ([]*string, error) {
 	dependencies := make([]*string, 0)

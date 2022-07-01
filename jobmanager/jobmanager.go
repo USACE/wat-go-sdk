@@ -37,7 +37,6 @@ func (jm JobManager) ProcessJob() error {
 	err = jm.job.GeneratePayloads() //jm.store
 	fmt.Println(err)
 	//create error channel.
-	//create waitgroups to throttle compute resources?
 	for i := jm.job.EventStartIndex; i < jm.job.EventEndIndex; i++ {
 		go func(index int) {
 			err = jm.job.ComputeEvent(index)
