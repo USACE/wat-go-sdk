@@ -25,7 +25,6 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 		Id:                uuid.New().String(), //make a uuid
 		EventStartIndex:   jm.EventStartIndex,
 		EventEndIndex:     jm.EventEndIndex,
-		Models:            jm.Models,
 		OutputDestination: jm.OutputDestination,
 	}
 	linkedManifests := make([]LinkedModelManifest, len(jm.LinkedManifestResources))
@@ -47,6 +46,10 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 		}
 		linkedManifests[idx] = lm
 	}
-	job.LinkedManifests = linkedManifests
+	job.Dag = DirectedAcyclicGraph{
+		Models:          jm.Models,
+		LinkedManifests: linkedManifests,
+		Resources:       map[string]ProvisionedResources{},
+	}
 	return job, nil
 }
