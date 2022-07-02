@@ -37,7 +37,7 @@ type LinkedInternalPathData struct {
 	SourceFileID string `json:"source_file_identifier" yaml:"source_file_identifier"`
 }
 
-func (lm LinkedModelManifest) ProducesFile(fileId string) (plugindatamodel.FileData, bool) {
+func (lm LinkedModelManifest) producesFile(fileId string) (plugindatamodel.FileData, bool) {
 	for _, output := range lm.Outputs {
 		if fileId == output.Id {
 			return output, true
@@ -45,8 +45,8 @@ func (lm LinkedModelManifest) ProducesFile(fileId string) (plugindatamodel.FileD
 	}
 	return plugindatamodel.FileData{}, false
 }
-func (lf LinkedModelManifest) ProducesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
-	output, ok := lf.ProducesFile(internalpath.SourceFileID)
+func (lf LinkedModelManifest) producesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
+	output, ok := lf.producesFile(internalpath.SourceFileID)
 	if ok {
 		for _, ip := range output.InternalPaths {
 			if internalpath.SourcePathID == ip.Id {

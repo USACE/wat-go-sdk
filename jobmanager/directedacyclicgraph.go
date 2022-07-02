@@ -113,7 +113,7 @@ func (dag DirectedAcyclicGraph) linkToPluginOutput(linkedFile LinkedFileData, ev
 		},
 		InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 	}
-	output, ok := dag.ProducesFile(linkedFile)
+	output, ok := dag.producesFile(linkedFile)
 	if ok {
 		resourcedInput.Path = fmt.Sprintf("%vevent_%v/%v", outputDestination.Path, eventIndex, output.FileName)
 		//check if there are internal file paths
@@ -133,7 +133,7 @@ func (dag DirectedAcyclicGraph) linkInternalPaths(linkedFile LinkedFileData, eve
 	internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
 	//currently not checking if a link is unsatisfied. it might be smart to error out if len(linkedFile.InternalPaths)!=numsuccessfullinks
 	for idx, internalPath := range linkedFile.InternalPaths {
-		internalpathid, outputFileName, ok := dag.ProducesInternalPath(internalPath)
+		internalpathid, outputFileName, ok := dag.producesInternalPath(internalPath)
 		if ok {
 			resourcedInput := plugindatamodel.ResourcedInternalPathData{
 				PathName:     internalPath.PathName,
@@ -189,18 +189,18 @@ func (dag DirectedAcyclicGraph) setPayloadOutputDestinations(linkedManifest Link
 	}
 	return outputs, nil
 }
-func (dag DirectedAcyclicGraph) ProducesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
+func (dag DirectedAcyclicGraph) producesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
 	for _, lm := range dag.LinkedManifests {
-		ip, fn, ok := lm.ProducesInternalPath(internalpath)
+		ip, fn, ok := lm.producesInternalPath(internalpath)
 		if ok {
 			return ip, fn, ok
 		}
 	}
 	return "", "", false
 }
-func (dag DirectedAcyclicGraph) ProducesFile(linkedFile LinkedFileData) (plugindatamodel.FileData, bool) {
+func (dag DirectedAcyclicGraph) producesFile(linkedFile LinkedFileData) (plugindatamodel.FileData, bool) {
 	for _, lm := range dag.LinkedManifests {
-		f, ok := lm.ProducesFile(linkedFile.Id)
+		f, ok := lm.producesFile(linkedFile.Id)
 		if ok {
 			return f, ok
 		}
