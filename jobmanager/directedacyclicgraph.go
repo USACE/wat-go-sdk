@@ -113,23 +113,19 @@ func (dag DirectedAcyclicGraph) linkToPluginOutput(linkedFile LinkedFileData, ev
 		},
 		InternalPaths: []plugindatamodel.ResourcedInternalPathData{},
 	}
-	for _, linkedManifest := range dag.LinkedManifests {
-		for _, output := range linkedManifest.Outputs {
-			if linkedFile.SourceDataId == output.Id {
-				//yay we found a match
-				resourcedInput.Path = fmt.Sprintf("%vevent_%v/%v", outputDestination.Path, eventIndex, output.FileName)
-				//check if there are internal file paths
-				if len(linkedFile.InternalPaths) > 0 {
-					//link internal paths if there are any.
-					resourcedInternalPaths, err := dag.linkInternalPaths(linkedFile, eventIndex, outputDestination)
-					if err != nil {
-						return resourcedInput, err
-					}
-					resourcedInput.InternalPaths = resourcedInternalPaths
-				}
-				return resourcedInput, nil
+	output, ok := dag.ProducesFile(linkedFile)
+	if ok {
+		resourcedInput.Path = fmt.Sprintf("%vevent_%v/%v", outputDestination.Path, eventIndex, output.FileName)
+		//check if there are internal file paths
+		if linkedFile.HasInternalPaths() {
+			//link internal paths if there are any.
+			resourcedInternalPaths, err := dag.linkInternalPaths(linkedFile, eventIndex, outputDestination)
+			if err != nil {
+				return resourcedInput, err
 			}
+			resourcedInput.InternalPaths = resourcedInternalPaths
 		}
+		return resourcedInput, nil
 	}
 	return resourcedInput, errors.New("no link found")
 }
@@ -137,31 +133,19 @@ func (dag DirectedAcyclicGraph) linkInternalPaths(linkedFile LinkedFileData, eve
 	internalPaths := make([]plugindatamodel.ResourcedInternalPathData, len(linkedFile.InternalPaths))
 	//currently not checking if a link is unsatisfied. it might be smart to error out if len(linkedFile.InternalPaths)!=numsuccessfullinks
 	for idx, internalPath := range linkedFile.InternalPaths {
-		for _, linkedManifest := range dag.LinkedManifests {
-			for _, output := range linkedManifest.Outputs {
-				if internalPath.SourceFileID == output.Id {
-					//yay we found a match
-					ip := ""
-					if len(output.InternalPaths) > 0 {
-						for _, internalpath := range output.InternalPaths {
-							if internalpath.Id == internalPath.SourcePathID {
-								ip = internalpath.PathName
-							}
-						}
-					}
-					resourcedInput := plugindatamodel.ResourcedInternalPathData{
-						PathName:     internalPath.PathName,
-						FileName:     output.FileName,
-						InternalPath: ip,
-						ResourceInfo: plugindatamodel.ResourceInfo{
-							Store: outputDestination.Store,
-							Root:  outputDestination.Root,
-							Path:  fmt.Sprintf("%vevent_%v/%v", outputDestination.Path, eventIndex, output.FileName),
-						},
-					}
-					internalPaths[idx] = resourcedInput
-				}
+		internalpathid, outputFileName, ok := dag.ProducesInternalPath(internalPath)
+		if ok {
+			resourcedInput := plugindatamodel.ResourcedInternalPathData{
+				PathName:     internalPath.PathName,
+				FileName:     outputFileName,
+				InternalPath: internalpathid,
+				ResourceInfo: plugindatamodel.ResourceInfo{
+					Store: outputDestination.Store,
+					Root:  outputDestination.Root,
+					Path:  fmt.Sprintf("%vevent_%v/%v", outputDestination.Path, eventIndex, outputFileName),
+				},
 			}
+			internalPaths[idx] = resourcedInput
 		}
 	}
 	return internalPaths, nil
@@ -204,4 +188,22 @@ func (dag DirectedAcyclicGraph) setPayloadOutputDestinations(linkedManifest Link
 		outputs[idx] = resourcedOutput
 	}
 	return outputs, nil
+}
+func (dag DirectedAcyclicGraph) ProducesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
+	for _, lm := range dag.LinkedManifests {
+		ip, fn, ok := lm.ProducesInternalPath(internalpath)
+		if ok {
+			return ip, fn, ok
+		}
+	}
+	return "", "", false
+}
+func (dag DirectedAcyclicGraph) ProducesFile(linkedFile LinkedFileData) (plugindatamodel.FileData, bool) {
+	for _, lm := range dag.LinkedManifests {
+		f, ok := lm.ProducesFile(linkedFile.Id)
+		if ok {
+			return f, ok
+		}
+	}
+	return plugindatamodel.FileData{}, false
 }

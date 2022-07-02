@@ -23,6 +23,10 @@ type LinkedFileData struct {
 	InternalPaths []LinkedInternalPathData `json:"internal_paths,omitempty" yaml:"internal_paths,omitempty"`
 }
 
+func (lf LinkedFileData) HasInternalPaths() bool {
+	return len(lf.InternalPaths) > 0
+}
+
 //LinkedInternalPathData
 type LinkedInternalPathData struct {
 	//Id is an internal element generated to identify any data element.
@@ -31,4 +35,24 @@ type LinkedInternalPathData struct {
 	PathName     string `json:"pathname" yaml:"pathname"`
 	SourcePathID string `json:"source_path_identifier,omitempty" yaml:"source_path_identifier,omitempty"`
 	SourceFileID string `json:"source_file_identifier" yaml:"source_file_identifier"`
+}
+
+func (lm LinkedModelManifest) ProducesFile(fileId string) (plugindatamodel.FileData, bool) {
+	for _, output := range lm.Outputs {
+		if fileId == output.Id {
+			return output, true
+		}
+	}
+	return plugindatamodel.FileData{}, false
+}
+func (lf LinkedModelManifest) ProducesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
+	output, ok := lf.ProducesFile(internalpath.SourceFileID)
+	if ok {
+		for _, ip := range output.InternalPaths {
+			if internalpath.SourcePathID == ip.Id {
+				return ip.PathName, output.FileName, true
+			}
+		}
+	}
+	return "", "", false
 }
