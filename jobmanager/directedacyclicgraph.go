@@ -152,24 +152,21 @@ func (dag DirectedAcyclicGraph) linkInternalPaths(linkedFile LinkedFileData, eve
 }
 func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, eventIndex int, outputDestination plugindatamodel.ResourceInfo) (plugindatamodel.ResourcedFileData, error) {
 	returnFile := plugindatamodel.ResourcedFileData{}
-	for _, model := range dag.Models {
-		for _, file := range model.Files {
-			if file.Id == linkedFile.SourceDataId {
-				//check if there are internal file paths
-				returnFile.Id = file.Id
-				returnFile.FileName = file.FileName
-				returnFile.ResourceInfo = file.ResourceInfo
-				fmt.Printf("there are %v internal paths on input %v\n", len(linkedFile.InternalPaths), linkedFile.SourceDataId)
-				if len(linkedFile.InternalPaths) > 0 {
-					resourcedInternalPaths, err := dag.linkInternalPaths(linkedFile, eventIndex, outputDestination)
-					if err != nil {
-						return returnFile, err
-					}
-					returnFile.InternalPaths = resourcedInternalPaths
-				}
-				return returnFile, nil
+	file, ok := dag.producesModelFile(linkedFile)
+	if ok {
+		//check if there are internal file paths
+		returnFile.Id = file.Id
+		returnFile.FileName = file.FileName
+		returnFile.ResourceInfo = file.ResourceInfo
+		fmt.Printf("there are %v internal paths on input %v\n", len(linkedFile.InternalPaths), linkedFile.SourceDataId)
+		if len(linkedFile.InternalPaths) > 0 {
+			resourcedInternalPaths, err := dag.linkInternalPaths(linkedFile, eventIndex, outputDestination)
+			if err != nil {
+				return returnFile, err
 			}
+			returnFile.InternalPaths = resourcedInternalPaths
 		}
+		return returnFile, nil
 	}
 	return returnFile, errors.New("could not find a match")
 }
@@ -206,4 +203,14 @@ func (dag DirectedAcyclicGraph) producesFile(linkedFile LinkedFileData) (plugind
 		}
 	}
 	return plugindatamodel.FileData{}, false
+}
+func (dag DirectedAcyclicGraph) producesModelFile(linkedFile LinkedFileData) (plugindatamodel.ResourcedFileData, bool) {
+	for _, model := range dag.Models {
+		for _, modelFile := range model.Files {
+			if modelFile.Id == linkedFile.SourceDataId {
+				return modelFile, true
+			}
+		}
+	}
+	return plugindatamodel.ResourcedFileData{}, false
 }
