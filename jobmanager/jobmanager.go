@@ -17,6 +17,11 @@ func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileSt
 	if err != nil {
 		return jobManager, err
 	}
+	orderedManifests, err := job.Dag.TopologicallySort()
+	if err != nil {
+		return jobManager, err
+	}
+	job.Dag.LinkedManifests = orderedManifests //*/
 	jobManager.job = job
 	return jobManager, nil
 }

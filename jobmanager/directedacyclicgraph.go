@@ -8,12 +8,104 @@ import (
 	"github.com/usace/wat-go-sdk/plugindatamodel"
 )
 
+type LinkedManifestStack []LinkedModelManifest
+
+func (lms *LinkedManifestStack) Push(lm LinkedModelManifest) {
+	*lms = append(*lms, lm)
+}
+func (lms *LinkedManifestStack) Pop() (LinkedModelManifest, error) {
+	if len(*lms) == 0 {
+		return LinkedModelManifest{}, errors.New("no more elements in the stack")
+	}
+	id := len(*lms) - 1
+	lm := (*lms)[id]
+	*lms = (*lms)[:id]
+	return lm, nil
+}
+
 type DirectedAcyclicGraph struct {
 	Models          []plugindatamodel.ModelIdentifier `json:"models" yaml:"models"`
 	LinkedManifests []LinkedModelManifest             `json:"linked_manifests" yaml:"linked_manifests"`
 	Resources       map[string]ProvisionedResources   `json:"provisioned_resources" yaml:"provisioned_resources"`
 }
 
+func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, error) {
+	//Kahn's Algorithm
+	S := LinkedManifestStack{} //set of linked manifests with no upstream dependencies
+	L := LinkedManifestStack{}
+	for _, lm := range dag.LinkedManifests {
+		noDependencies := true
+		for _, input := range lm.Inputs {
+			_, ok := dag.producesFile(input)
+			if ok {
+				noDependencies = false
+			} else {
+				if len(input.InternalPaths) > 0 {
+					for _, ip := range input.InternalPaths {
+						_, _, ipok := dag.producesInternalPath(ip)
+						if ipok {
+							noDependencies = false
+						}
+					}
+				}
+			}
+		}
+		if noDependencies {
+			S.Push(lm)
+		}
+	}
+	if len(S) == 0 {
+		return S, errors.New("cannot have a DAG without at least one start node")
+	}
+	for len(S) > 0 {
+		n, err := S.Pop()
+		if err != nil {
+			return S, err
+		}
+		L.Push(n)
+		for _, m := range dag.LinkedManifests {
+			noOtherDependencies := true
+			for _, input := range m.Inputs {
+				_, dagok := dag.producesFile(input)
+				if dagok {
+					//should i check for anything in L?
+					_, ok := n.producesFile(input.SourceDataId)
+					if !ok {
+						noOtherDependencies = false
+					}
+				} else {
+					if len(input.InternalPaths) > 0 {
+						for _, ip := range input.InternalPaths {
+							_, _, ipok := dag.producesInternalPath(ip)
+							if ipok {
+								//should i check for anything in L?
+								_, _, nipok := n.producesInternalPath(ip)
+								if !nipok {
+									noOtherDependencies = false
+								}
+							}
+						}
+					}
+				}
+			}
+			if noOtherDependencies {
+				visited := false
+				for _, vistedNode := range L {
+					if m.ManifestID == vistedNode.ManifestID {
+						visited = true
+					}
+				}
+				if !visited {
+					S.Push(m)
+				}
+			}
+		}
+	}
+	if len(L) != len(dag.LinkedManifests) {
+		return L, errors.New("something went wrong in the sorting.")
+	}
+	return L, nil
+}
 func (dag DirectedAcyclicGraph) Dependencies(manifestUUID string, eventIndex int) ([]*string, error) {
 	//get the dependencies for a given manifestUUID and eventIndex.
 	//get the linked manifest for a given manifestUUID
@@ -197,7 +289,7 @@ func (dag DirectedAcyclicGraph) producesInternalPath(internalpath LinkedInternal
 }
 func (dag DirectedAcyclicGraph) producesFile(linkedFile LinkedFileData) (plugindatamodel.FileData, bool) {
 	for _, lm := range dag.LinkedManifests {
-		f, ok := lm.producesFile(linkedFile.Id)
+		f, ok := lm.producesFile(linkedFile.SourceDataId)
 		if ok {
 			return f, ok
 		}

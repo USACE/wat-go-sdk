@@ -48,11 +48,14 @@ func (lm LinkedModelManifest) producesFile(fileId string) (plugindatamodel.FileD
 func (lf LinkedModelManifest) producesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
 	output, ok := lf.producesFile(internalpath.SourceFileID)
 	if ok {
-		for _, ip := range output.InternalPaths {
-			if internalpath.SourcePathID == ip.Id {
-				return ip.PathName, output.FileName, true
+		if len(output.InternalPaths) > 0 {
+			for _, ip := range output.InternalPaths {
+				if internalpath.SourcePathID == ip.Id {
+					return ip.PathName, output.FileName, true
+				}
 			}
 		}
+		return "", output.FileName, true
 	}
 	return "", "", false
 }
