@@ -68,9 +68,16 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 			for _, input := range m.Inputs {
 				_, dagok := dag.producesFile(input)
 				if dagok {
+					inL := false
 					//should i check for anything in L?
-					_, ok := n.producesFile(input.SourceDataId)
-					if !ok {
+					//_, ok := n.producesFile(input.SourceDataId)
+					for _, Ln := range L {
+						_, ok := Ln.producesFile(input.SourceDataId)
+						if ok {
+							inL = true
+						}
+					}
+					if !inL {
 						noOtherDependencies = false
 					}
 				} else {
@@ -78,9 +85,15 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 						for _, ip := range input.InternalPaths {
 							_, _, ipok := dag.producesInternalPath(ip)
 							if ipok {
+								inL := false
 								//should i check for anything in L?
-								_, _, nipok := n.producesInternalPath(ip)
-								if !nipok {
+								for _, Ln := range L {
+									_, _, ok := Ln.producesInternalPath(ip)
+									if ok {
+										inL = true
+									}
+								}
+								if !inL {
 									noOtherDependencies = false
 								}
 							}
@@ -93,6 +106,11 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 				for _, vistedNode := range L {
 					if m.ManifestID == vistedNode.ManifestID {
 						visited = true
+					}
+				}
+				for _, addedToS := range S {
+					if m.ManifestID == addedToS.ManifestID {
+						visited = true // added to s but not yet popped off the stack
 					}
 				}
 				if !visited {
