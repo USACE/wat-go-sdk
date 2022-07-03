@@ -55,7 +55,7 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 		}
 	}
 	if len(S) == 0 {
-		return S, errors.New("cannot have a DAG without at least one start node")
+		return S, errors.New("a DAG must contain at least one node with no dependencies satisfied by other linked manifests in the DAG.")
 	}
 	for len(S) > 0 {
 		n, err := S.Pop()
@@ -120,7 +120,7 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 		}
 	}
 	if len(L) != len(dag.LinkedManifests) {
-		return L, errors.New("something went wrong in the sorting.")
+		return L, errors.New("the DAG contains a subcycle") //we could identify it by listing the elements in the dag that are not present in the Stack L
 	}
 	return L, nil
 }
