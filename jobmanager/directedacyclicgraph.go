@@ -30,7 +30,7 @@ type DirectedAcyclicGraph struct {
 }
 
 func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, error) {
-	//Kahn's Algorithm
+	//Kahn's Algorithm https://en.wikipedia.org/wiki/Topological_sorting
 	S := LinkedManifestStack{} //set of linked manifests with no upstream dependencies
 	L := LinkedManifestStack{}
 	for _, lm := range dag.LinkedManifests {
