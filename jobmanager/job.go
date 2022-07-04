@@ -22,8 +22,20 @@ type Job struct {
 func (job *Job) ProvisionResources() error {
 	//make sure job arn list is provisioned for the total number of events to be computed.
 	//depends on cloud-resources//
-	job.Dag.Resources = make(map[string]ProvisionedResources, len(job.Dag.LinkedManifests))
-	return errors.New("resources!!!")
+	resources := make(map[string]ProvisionedResources, len(job.Dag.LinkedManifests))
+	for _, lm := range job.Dag.LinkedManifests {
+		qarn := lm.ManifestID                  //provisioned with batch
+		computeEnviornmentArn := lm.ManifestID //provisioned with batch
+		lmResource := ProvisionedResources{
+			LinkedManifestID:      lm.ManifestID,
+			ComputeEnvironmentARN: &computeEnviornmentArn,
+			JobARN:                []*string{},
+			QueueARN:              &qarn,
+		}
+		resources[lm.ManifestID] = lmResource
+	}
+	job.Dag.Resources = resources
+	return nil
 }
 
 //DestructResources
@@ -32,13 +44,19 @@ func (job Job) DestructResources() error {
 	//depends on cloud-resources//
 	return errors.New("ka-blewy!!!")
 }
+func (job Job) eventLevelOutputDirectory(eventIndex int) string {
+	return fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
+}
+func (job Job) generatePayloadPath(eventIndex int, manifest LinkedModelManifest) string {
+	return fmt.Sprintf("%v%v_payload.yml", job.eventLevelOutputDirectory(eventIndex), manifest.Plugin.Name)
+}
 
 //GeneratePayloads
 func (job Job) GeneratePayloads() error {
 	//generate payloads for all events up front?
 	for eventIndex := job.EventStartIndex; eventIndex < job.EventEndIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
-		outputDestinationPath := fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
+		outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
 		for _, n := range job.Dag.LinkedManifests {
 			fmt.Println(n.ImageAndTag, outputDestinationPath)
 			payload, err := job.Dag.GeneratePayload(n, eventIndex, job.OutputDestination)
@@ -53,7 +71,7 @@ func (job Job) GeneratePayloads() error {
 			fmt.Println("")
 			fmt.Println(string(bytes))
 			//put payload in s3
-			path := outputDestinationPath + n.Plugin.Name + "_payload.yml"
+			path := job.generatePayloadPath(eventIndex, n)
 			fmt.Println("putting object in fs:", path)
 			//_, err = fs.PutObject(path, bytes)
 			if _, err = os.Stat(path); os.IsNotExist(err) {
@@ -75,26 +93,26 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.Dag.LinkedManifests {
 		job.submitTask(n, eventIndex)
 	}
-	fmt.Println(fmt.Sprintf("computing event %v", eventIndex))
+	fmt.Printf("computing event %v\n", eventIndex)
 	return nil
 }
-func (job Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
+func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
 	dependencies, err := job.Dag.Dependencies(manifest, offset)
 	if err != nil {
 		return err
 	} else {
-		fmt.Print(dependencies)
+		fmt.Println(dependencies)
 	}
-	payloadPath := fmt.Sprintf("%vevent_%v/%v_payload.yml", job.OutputDestination.Path, eventIndex, manifest.Plugin.Name)
+	payloadPath := job.generatePayloadPath(eventIndex, manifest)
 	fmt.Println(payloadPath)
 	//submit to batch.
 	batchjobarn := "batch arn returned."
 	//set job arn
 	resources, ok := job.Dag.Resources[manifest.ManifestID]
 	if ok {
-		resources.JobARN[offset] = &batchjobarn
+		resources.JobARN = append(resources.JobARN, &batchjobarn)
 		job.Dag.Resources[manifest.ManifestID] = resources
 	} else {
 		return errors.New("task for " + manifest.Plugin.Name)

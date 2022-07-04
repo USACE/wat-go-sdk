@@ -134,7 +134,8 @@ func (dag DirectedAcyclicGraph) Dependencies(lm LinkedModelManifest, eventIndex 
 			if inputmanifest.producesDependency(input) {
 				resources, ok := dag.Resources[inputmanifest.ManifestID]
 				if ok {
-					dependencies = append(dependencies, resources.JobARN[eventIndex])
+					jobarn := resources.JobARN[eventIndex]
+					dependencies = append(dependencies, jobarn)
 				}
 			}
 		}
