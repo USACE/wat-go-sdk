@@ -59,3 +59,18 @@ func (lf LinkedModelManifest) producesInternalPath(internalpath LinkedInternalPa
 	}
 	return "", "", false
 }
+func (lm LinkedModelManifest) producesDependency(linkedFile LinkedFileData) bool {
+	for _, output := range lm.Outputs {
+		if linkedFile.SourceDataId == output.Id {
+			return true
+		}
+		if linkedFile.HasInternalPaths() {
+			for _, internalpath := range linkedFile.InternalPaths {
+				if internalpath.SourceFileID == output.Id {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}

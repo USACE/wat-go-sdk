@@ -81,7 +81,7 @@ func (job Job) ComputeEvent(eventIndex int) error {
 func (job Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
-	dependencies, err := job.Dag.findDependencies(manifest, offset)
+	dependencies, err := job.Dag.Dependencies(manifest, offset)
 	if err != nil {
 		return err
 	} else {

@@ -124,66 +124,36 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 	}
 	return L, nil
 }
-func (dag DirectedAcyclicGraph) Dependencies(manifestUUID string, eventIndex int) ([]*string, error) {
-	//get the dependencies for a given manifestUUID and eventIndex.
-	//get the linked manifest for a given manifestUUID
-	linkedManifest := LinkedModelManifest{}
-	for _, lm := range dag.LinkedManifests {
-		if lm.ManifestID == manifestUUID {
-			linkedManifest = lm
-			break
-		}
-	}
-	return dag.findDependencies(linkedManifest, eventIndex)
-}
-func (dag DirectedAcyclicGraph) findDependencies(lm LinkedModelManifest, eventIndex int) ([]*string, error) {
+func (dag DirectedAcyclicGraph) Dependencies(lm LinkedModelManifest, eventIndex int) ([]*string, error) {
 	dependencies := make([]*string, 0)
 	for _, input := range lm.Inputs {
-		foundMatch := false
 		for _, inputmanifest := range dag.LinkedManifests {
 			if lm.ManifestID == inputmanifest.ManifestID {
-				break
+				break //not dependent upon self.
 			}
-			//lm := LinkedModelManifest{} //get the right linkedmodel manifest based on the resource linkmanifest id.
-			for _, outputs := range inputmanifest.Outputs {
-
-				if input.Id == outputs.Id {
-					//yay we found a match
-					resources, ok := dag.Resources[inputmanifest.ManifestID]
-					if ok {
-						dependencies = append(dependencies, resources.JobARN[eventIndex])
-						foundMatch = true
-						break
-					} else {
-						return dependencies, errors.New("resources not provisioned for this input")
-					}
+			if inputmanifest.producesDependency(input) {
+				resources, ok := dag.Resources[inputmanifest.ManifestID]
+				if ok {
+					dependencies = append(dependencies, resources.JobARN[eventIndex])
 				}
-			}
-			if foundMatch {
-				break
-			}
-		}
-		if !foundMatch {
-			//this will trigger on all wat job model files.
-			for _, model := range dag.Models {
-				for _, file := range model.Files {
-					if file.Id == input.Id {
-						//no dependency to add here. but we did find the match.
-						foundMatch = true
-						break
-					}
-				}
-				if foundMatch {
-					break
-				}
-			}
-			if !foundMatch {
-				return dependencies, errors.New("failed to find a match to an input dependency")
 			}
 		}
 	}
 	//deduplicate multiple arn references
-	return dependencies, nil
+	uniqueDependencies := make([]*string, 0)
+	for _, s := range dependencies {
+		contains := false
+		for _, us := range uniqueDependencies {
+			if s == us {
+				contains = true
+				break
+			}
+		}
+		if !contains {
+			uniqueDependencies = append(uniqueDependencies, s)
+		}
+	}
+	return uniqueDependencies, nil
 }
 
 func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventindex int, outputDestination plugindatamodel.ResourceInfo) (plugindatamodel.ModelPayload, error) {
