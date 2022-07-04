@@ -24,8 +24,8 @@ func (job *Job) ProvisionResources() error {
 	//depends on cloud-resources//
 	resources := make(map[string]ProvisionedResources, len(job.Dag.LinkedManifests))
 	for _, lm := range job.Dag.LinkedManifests {
-		qarn := lm.ManifestID                  //provisioned with batch
-		computeEnviornmentArn := lm.ManifestID //provisioned with batch
+		qarn := lm.ManifestID                  //@TODO: provisioned with batch
+		computeEnviornmentArn := lm.ManifestID //@TODO: provisioned with batch
 		lmResource := ProvisionedResources{
 			LinkedManifestID:      lm.ManifestID,
 			ComputeEnvironmentARN: &computeEnviornmentArn,
@@ -73,7 +73,7 @@ func (job Job) GeneratePayloads() error {
 			//put payload in s3
 			path := job.generatePayloadPath(eventIndex, n)
 			fmt.Println("putting object in fs:", path)
-			//_, err = fs.PutObject(path, bytes)
+			//_, err = fs.PutObject(path, bytes) //@TODO: replace with FileStore.
 			if _, err = os.Stat(path); os.IsNotExist(err) {
 				os.MkdirAll(outputDestinationPath, 0644)
 			}
@@ -108,7 +108,7 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	payloadPath := job.generatePayloadPath(eventIndex, manifest)
 	fmt.Println(payloadPath)
 	//submit to batch.
-	batchjobarn := "batch arn returned."
+	batchjobarn := "batch arn returned." //@TODO: replace with call to batch
 	//set job arn
 	resources, ok := job.Dag.Resources[manifest.ManifestID]
 	if ok {
