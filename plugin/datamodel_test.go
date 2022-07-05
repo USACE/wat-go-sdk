@@ -1,4 +1,4 @@
-package plugindatamodel_test
+package plugin_test
 
 import (
 	"io/ioutil"

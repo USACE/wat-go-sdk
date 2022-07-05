@@ -1,4 +1,4 @@
-package plugindatamodel
+package plugin
 
 //ModelManifest
 type ModelManifest struct {

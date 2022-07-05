@@ -1,4 +1,4 @@
-package jobmanager
+package wat
 
 import (
 	"fmt"
@@ -51,7 +51,23 @@ func (jm JobManager) ProcessJob() error {
 	}
 	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
 	err = jm.job.DestructResources()
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	fmt.Println("Job Processed!")
+	return nil
+}
+func (jm JobManager) Validate() error {
+	err := jm.job.ValidateLinkages() //evaluate if this can be trimmed down to "validateLinkages"
+	if err != nil {
+		return err
+	}
+	_, err = jm.job.Dag.TopologicallySort()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

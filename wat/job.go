@@ -1,22 +1,23 @@
-package jobmanager
+package wat
 
 import (
 	"errors"
 	"fmt"
 	"os"
 
-	"github.com/usace/wat-go-sdk/plugindatamodel"
+	"github.com/usace/wat-go-sdk/plugin"
 	"gopkg.in/yaml.v3"
 )
 
 //Job
 type Job struct {
-	Id                string                       `json:"job_identifier" yaml:"job_identifier"`
-	EventStartIndex   int                          `json:"event_start_index" yaml:"event_start_index"`
-	EventEndIndex     int                          `json:"event_end_index" yaml:"event_end_index"`
-	Dag               DirectedAcyclicGraph         `json:"directed_acyclic_graph" yaml:"directed_acyclic_graph"`
-	OutputDestination plugindatamodel.ResourceInfo `json:"output_destination" yaml:"output_destination"`
+	Id                string               `json:"job_identifier" yaml:"job_identifier"`
+	EventStartIndex   int                  `json:"event_start_index" yaml:"event_start_index"`
+	EventEndIndex     int                  `json:"event_end_index" yaml:"event_end_index"`
+	Dag               DirectedAcyclicGraph `json:"directed_acyclic_graph" yaml:"directed_acyclic_graph"`
+	OutputDestination plugin.ResourceInfo  `json:"output_destination" yaml:"output_destination"`
 }
+type PayloadProcessor func(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error
 
 //ProvisionResources
 func (job *Job) ProvisionResources() error {
@@ -42,7 +43,8 @@ func (job *Job) ProvisionResources() error {
 func (job Job) DestructResources() error {
 
 	//depends on cloud-resources//
-	return errors.New("ka-blewy!!!")
+	fmt.Println("ka-blewy!!!")
+	return nil
 }
 func (job Job) eventLevelOutputDirectory(eventIndex int) string {
 	return fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
@@ -50,10 +52,13 @@ func (job Job) eventLevelOutputDirectory(eventIndex int) string {
 func (job Job) generatePayloadPath(eventIndex int, manifest LinkedModelManifest) string {
 	return fmt.Sprintf("%v%v_payload.yml", job.eventLevelOutputDirectory(eventIndex), manifest.Plugin.Name)
 }
-
-//GeneratePayloads
-func (job Job) GeneratePayloads() error {
-	//generate payloads for all events up front?
+func (job Job) ValidateLinkages() error {
+	return job.payloadLooper(payloadValidator)
+}
+func payloadValidator(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error {
+	return nil
+}
+func (job Job) payloadLooper(processor PayloadProcessor) error {
 	for eventIndex := job.EventStartIndex; eventIndex < job.EventEndIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
 		outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
@@ -63,26 +68,42 @@ func (job Job) GeneratePayloads() error {
 			if err != nil {
 				return err
 			}
-			//fmt.Println(payload)
-			bytes, err := yaml.Marshal(payload)
+			err = processor(payload, job, eventIndex, n)
 			if err != nil {
-				return err
-			}
-			fmt.Println("")
-			fmt.Println(string(bytes))
-			//put payload in s3
-			path := job.generatePayloadPath(eventIndex, n)
-			fmt.Println("putting object in fs:", path)
-			//_, err = fs.PutObject(path, bytes) //@TODO: replace with FileStore.
-			if _, err = os.Stat(path); os.IsNotExist(err) {
-				os.MkdirAll(outputDestinationPath, 0644)
-			}
-			err = os.WriteFile(path, bytes, 0644)
-			if err != nil {
-				fmt.Println("failure to push payload to filestore:", err)
 				return err
 			}
 		}
+	}
+	return nil
+}
+func payloadWriter(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error {
+	bytes, err := yaml.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	fmt.Println("")
+	fmt.Println(string(bytes))
+	//put payload in s3
+	outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
+	path := job.generatePayloadPath(eventIndex, modelManifest)
+	fmt.Println("putting object in fs:", path)
+	//_, err = fs.PutObject(path, bytes) //@TODO: replace with FileStore.
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		os.MkdirAll(outputDestinationPath, 0644)
+	}
+	err = os.WriteFile(path, bytes, 0644)
+	if err != nil {
+		fmt.Println("failure to push payload to filestore:", err)
+		return err
+	}
+	return nil
+}
+
+//GeneratePayloads
+func (job Job) GeneratePayloads() error {
+	err := job.payloadLooper(payloadWriter)
+	if err != nil {
+		return err
 	}
 	fmt.Println("payloads!!!")
 	return nil

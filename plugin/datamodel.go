@@ -1,4 +1,4 @@
-package plugindatamodel
+package plugin
 
 //Plugin a plugin is defined by its name an image and tag and the command necessary to call it to run a payload.
 type Plugin struct {

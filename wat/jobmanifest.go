@@ -1,4 +1,4 @@
-package jobmanager
+package wat
 
 import (
 	"fmt"
@@ -6,18 +6,18 @@ import (
 	"os"
 
 	"github.com/google/uuid"
-	"github.com/usace/wat-go-sdk/plugindatamodel"
+	"github.com/usace/wat-go-sdk/plugin"
 	"gopkg.in/yaml.v3"
 )
 
 //Job
 type JobManifest struct {
-	Id                      string                            `json:"job_identifier" yaml:"job_identifier"`
-	EventStartIndex         int                               `json:"event_start_index" yaml:"event_start_index"`
-	EventEndIndex           int                               `json:"event_end_index" yaml:"event_end_index"`
-	Models                  []plugindatamodel.ModelIdentifier `json:"models" yaml:"models"`
-	LinkedManifestResources []plugindatamodel.ResourceInfo    `json:"linked_manifests" yaml:"linked_manifests"`
-	OutputDestination       plugindatamodel.ResourceInfo      `json:"output_destination" yaml:"output_destination"`
+	Id                      string                   `json:"job_identifier" yaml:"job_identifier"`
+	EventStartIndex         int                      `json:"event_start_index" yaml:"event_start_index"`
+	EventEndIndex           int                      `json:"event_end_index" yaml:"event_end_index"`
+	Models                  []plugin.ModelIdentifier `json:"models" yaml:"models"`
+	LinkedManifestResources []plugin.ResourceInfo    `json:"linked_manifests" yaml:"linked_manifests"`
+	OutputDestination       plugin.ResourceInfo      `json:"output_destination" yaml:"output_destination"`
 }
 
 func (jm JobManifest) ConvertToJob() (Job, error) {

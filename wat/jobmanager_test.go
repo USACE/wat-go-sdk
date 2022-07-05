@@ -1,4 +1,4 @@
-package jobmanager_test
+package wat_test
 
 import (
 	"fmt"
@@ -8,27 +8,33 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/usace/wat-go-sdk/jobmanager"
+	"github.com/usace/wat-go-sdk/wat"
 	"gopkg.in/yaml.v3"
 )
 
 func TestReadJobManifest(t *testing.T) {
 	path := "../exampledata/wat-job.yaml"
-	jobManifest := jobmanager.JobManifest{}
+	jobManifest := wat.JobManifest{}
 	readobject(t, path, &jobManifest)
 }
 func TestReadLinkedManifest(t *testing.T) {
 	path := "../exampledata/ras_mutator_linked_manifest.yaml"
-	linkedmanifest := jobmanager.LinkedModelManifest{}
+	linkedmanifest := wat.LinkedModelManifest{}
 	readobject(t, path, &linkedmanifest)
 }
 func TestComputePayloads(t *testing.T) {
 	//read a jobmanifest into memory
 	path := "../exampledata/wat-job.yaml"
-	jobManifest := jobmanager.JobManifest{}
+	jobManifest := wat.JobManifest{}
 	readobject(t, path, &jobManifest)
 	//construct a job manager
-	jobManager, err := jobmanager.Init(jobManifest)
+	jobManager, err := wat.Init(jobManifest)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	// validate -
+	err = jobManager.Validate()
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

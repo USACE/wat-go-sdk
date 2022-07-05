@@ -1,14 +1,14 @@
-package jobmanager
+package wat
 
-import "github.com/usace/wat-go-sdk/plugindatamodel"
+import "github.com/usace/wat-go-sdk/plugin"
 
 //LinkedModelManifest
 type LinkedModelManifest struct {
-	ManifestID                      string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
-	plugindatamodel.Plugin          `json:"plugin" yaml:"plugin"`
-	plugindatamodel.ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
-	Inputs                          []LinkedFileData           `json:"inputs" yaml:"inputs"`
-	Outputs                         []plugindatamodel.FileData `json:"outputs" yaml:"outputs"`
+	ManifestID             string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	plugin.Plugin          `json:"plugin" yaml:"plugin"`
+	plugin.ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
+	Inputs                 []LinkedFileData  `json:"inputs" yaml:"inputs"`
+	Outputs                []plugin.FileData `json:"outputs" yaml:"outputs"`
 }
 
 //can use this struct to create a payload for a plugin
@@ -37,13 +37,13 @@ type LinkedInternalPathData struct {
 	SourceFileID string `json:"source_file_identifier" yaml:"source_file_identifier"`
 }
 
-func (lm LinkedModelManifest) producesFile(fileId string) (plugindatamodel.FileData, bool) {
+func (lm LinkedModelManifest) producesFile(fileId string) (plugin.FileData, bool) {
 	for _, output := range lm.Outputs {
 		if fileId == output.Id {
 			return output, true
 		}
 	}
-	return plugindatamodel.FileData{}, false
+	return plugin.FileData{}, false
 }
 func (lf LinkedModelManifest) producesInternalPath(internalpath LinkedInternalPathData) (string, string, bool) {
 	output, ok := lf.producesFile(internalpath.SourceFileID)

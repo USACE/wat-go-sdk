@@ -1,4 +1,4 @@
-package jobmanager
+package wat
 
 type ProvisionedResources struct {
 	LinkedManifestID      string //plugindatamodel.LinkedModelManifest
