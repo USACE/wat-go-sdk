@@ -2,7 +2,7 @@ package wat
 
 import "github.com/usace/wat-go-sdk/plugin"
 
-//LinkedModelManifest
+//LinkedModelManifest represents a model manifest that has been linked. A group
 type LinkedModelManifest struct {
 	ManifestID             string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
 	plugin.Plugin          `json:"plugin" yaml:"plugin"`
@@ -11,7 +11,6 @@ type LinkedModelManifest struct {
 	Outputs                []plugin.FileData `json:"outputs" yaml:"outputs"`
 }
 
-//can use this struct to create a payload for a plugin
 //LinkedFileData
 type LinkedFileData struct {
 	//Id is an internal element generated to identify any data element.

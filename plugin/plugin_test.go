@@ -11,13 +11,13 @@ import (
 )
 
 func TestReadPayload(t *testing.T) {
-	path := "../exampledata/payload_update.yaml"
+	path := "../exampledata/ras-mutator_payload.yml"
 	payload := plugin.ModelPayload{}
 	readobject(t, path, &payload)
 }
 
 func TestReadManifest(t *testing.T) {
-	path := "../exampledata/manifest_update.yaml"
+	path := "../exampledata/ras_mutator_manifest.yml"
 	manifest := plugin.ModelManifest{}
 	readobject(t, path, &manifest)
 }

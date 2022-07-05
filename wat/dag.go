@@ -8,31 +8,41 @@ import (
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
-type LinkedManifestStack []LinkedModelManifest
+type linkedManifestStack []LinkedModelManifest
 
-func (lms *LinkedManifestStack) Push(lm LinkedModelManifest) {
+func (lms *linkedManifestStack) Push(lm LinkedModelManifest) {
 	*lms = append(*lms, lm)
 }
-func (lms *LinkedManifestStack) Pop() (LinkedModelManifest, error) {
+func (lms *linkedManifestStack) Pop() (LinkedModelManifest, error) {
 	if len(*lms) == 0 {
 		return LinkedModelManifest{}, errors.New("no more elements in the stack")
 	}
+	//identiy the length of the stack
 	id := len(*lms) - 1
+	//find the last element
 	lm := (*lms)[id]
+	//remove the last element from the stack
 	*lms = (*lms)[:id]
+	//return the last element *pop*!
 	return lm, nil
 }
 
+type provisionedResources struct {
+	LinkedManifestID      string
+	ComputeEnvironmentARN *string
+	JobARN                []*string
+	QueueARN              *string
+}
 type DirectedAcyclicGraph struct {
 	Models          []plugin.ModelIdentifier        `json:"models" yaml:"models"`
 	LinkedManifests []LinkedModelManifest           `json:"linked_manifests" yaml:"linked_manifests"`
-	Resources       map[string]ProvisionedResources `json:"provisioned_resources" yaml:"provisioned_resources"`
+	Resources       map[string]provisionedResources `json:"provisioned_resources" yaml:"provisioned_resources"`
 }
 
 func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, error) {
 	//Kahn's Algorithm https://en.wikipedia.org/wiki/Topological_sorting
-	S := LinkedManifestStack{} //set of linked manifests with no upstream dependencies
-	L := LinkedManifestStack{}
+	S := linkedManifestStack{} //set of linked manifests with no upstream dependencies
+	L := linkedManifestStack{}
 	for _, lm := range dag.LinkedManifests {
 		noDependencies := true
 		for _, input := range lm.Inputs {

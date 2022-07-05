@@ -3,11 +3,125 @@ package wat
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/usace/wat-go-sdk/plugin"
 	"gopkg.in/yaml.v3"
 )
+
+//JobManifest
+type JobManifest struct {
+	Id                      string                   `json:"job_identifier" yaml:"job_identifier"`
+	EventStartIndex         int                      `json:"event_start_index" yaml:"event_start_index"`
+	EventEndIndex           int                      `json:"event_end_index" yaml:"event_end_index"`
+	Models                  []plugin.ModelIdentifier `json:"models" yaml:"models"`
+	LinkedManifestResources []plugin.ResourceInfo    `json:"linked_manifests" yaml:"linked_manifests"`
+	OutputDestination       plugin.ResourceInfo      `json:"output_destination" yaml:"output_destination"`
+}
+
+func (jm JobManifest) ConvertToJob() (Job, error) {
+	job := Job{
+		Id:                uuid.New().String(), //make a uuid
+		EventStartIndex:   jm.EventStartIndex,
+		EventEndIndex:     jm.EventEndIndex,
+		OutputDestination: jm.OutputDestination,
+	}
+	linkedManifests := make([]LinkedModelManifest, len(jm.LinkedManifestResources))
+	for idx, resourceInfo := range jm.LinkedManifestResources {
+		fmt.Println(resourceInfo.Path)
+		lm := LinkedModelManifest{}
+		file, err := os.Open(resourceInfo.Path) //replace with filestore? injected?
+		if err != nil {
+			return job, err
+		}
+		defer file.Close()
+		b, err := ioutil.ReadAll(file)
+		if err != nil {
+			return job, err
+		}
+		err = yaml.Unmarshal(b, &lm)
+		if err != nil {
+			return job, err
+		}
+		linkedManifests[idx] = lm
+	}
+	job.Dag = DirectedAcyclicGraph{
+		Models:          jm.Models,
+		LinkedManifests: linkedManifests,
+		Resources:       map[string]provisionedResources{},
+	}
+	return job, nil
+}
+
+//JobManager
+type JobManager struct {
+	job Job
+	//store         filestore.FileStore
+	//captainCrunch *batch.Batch
+}
+
+func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
+	jobManager := JobManager{}
+	job, err := jobManifest.ConvertToJob()
+	if err != nil {
+		return jobManager, err
+	}
+	orderedManifests, err := job.Dag.TopologicallySort()
+	if err != nil {
+		return jobManager, err
+	}
+	job.Dag.LinkedManifests = orderedManifests //*/
+	jobManager.job = job
+	return jobManager, nil
+}
+func (jm JobManager) ProcessJob() error {
+	err := jm.job.ProvisionResources()
+	fmt.Println(err)
+	//add in defer and recover
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered", r)
+			fmt.Println("Tearing Down Resources")
+			err = jm.job.DestructResources()
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}()
+	err = jm.job.GeneratePayloads() //jm.store
+	fmt.Println(err)
+	//create error channel.
+	for i := jm.job.EventStartIndex; i < jm.job.EventEndIndex; i++ {
+		go func(index int) {
+			err = jm.job.ComputeEvent(index)
+			fmt.Println(err)
+		}(i)
+
+	}
+	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
+	err = jm.job.DestructResources()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	fmt.Println("Job Processed!")
+	return nil
+}
+func (jm JobManager) Validate() error {
+	err := jm.job.ValidateLinkages() //evaluate if this can be trimmed down to "validateLinkages"
+	if err != nil {
+		return err
+	}
+	_, err = jm.job.Dag.TopologicallySort()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 //Job
 type Job struct {
@@ -23,11 +137,11 @@ type PayloadProcessor func(payload plugin.ModelPayload, job Job, eventIndex int,
 func (job *Job) ProvisionResources() error {
 	//make sure job arn list is provisioned for the total number of events to be computed.
 	//depends on cloud-resources//
-	resources := make(map[string]ProvisionedResources, len(job.Dag.LinkedManifests))
+	resources := make(map[string]provisionedResources, len(job.Dag.LinkedManifests))
 	for _, lm := range job.Dag.LinkedManifests {
 		qarn := lm.ManifestID                  //@TODO: provisioned with batch
 		computeEnviornmentArn := lm.ManifestID //@TODO: provisioned with batch
-		lmResource := ProvisionedResources{
+		lmResource := provisionedResources{
 			LinkedManifestID:      lm.ManifestID,
 			ComputeEnvironmentARN: &computeEnviornmentArn,
 			JobARN:                []*string{},
