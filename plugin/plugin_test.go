@@ -6,19 +6,19 @@ import (
 	"os"
 	"testing"
 
-	"github.com/usace/wat-go-sdk/plugindatamodel"
+	"github.com/usace/wat-go-sdk/plugin"
 	"gopkg.in/yaml.v3"
 )
 
 func TestReadPayload(t *testing.T) {
 	path := "../exampledata/payload_update.yaml"
-	payload := plugindatamodel.ModelPayload{}
+	payload := plugin.ModelPayload{}
 	readobject(t, path, &payload)
 }
 
 func TestReadManifest(t *testing.T) {
 	path := "../exampledata/manifest_update.yaml"
-	manifest := plugindatamodel.ModelManifest{}
+	manifest := plugin.ModelManifest{}
 	readobject(t, path, &manifest)
 }
 
@@ -52,41 +52,41 @@ func readobject(t *testing.T, path string, object interface{}) {
 }
 
 func TestWritePayload(t *testing.T) {
-	inputs := make([]plugindatamodel.ResourcedFileData, 2)
-	inputs[0] = plugindatamodel.ResourcedFileData{
+	inputs := make([]plugin.ResourcedFileData, 2)
+	inputs[0] = plugin.ResourcedFileData{
 		FileName: "Muncie.p04.tmp.hdf",
-		ResourceInfo: plugindatamodel.ResourceInfo{
+		ResourceInfo: plugin.ResourceInfo{
 			Store: "s3",
 			Root:  "cloud-wat-dev",
 			Path:  "/data/models/Muncie",
 		},
 	}
-	inputs[1] = plugindatamodel.ResourcedFileData{
+	inputs[1] = plugin.ResourcedFileData{
 		FileName: "/Event Conditions/ White  Reach: Muncie  RS: 15696.24",
-		ResourceInfo: plugindatamodel.ResourceInfo{
+		ResourceInfo: plugin.ResourceInfo{
 			Store: "s3",
 			Root:  "cloud-wat-dev",
 			Path:  "/runs/realization_1/event_1/Muncie_RS_15696.24.csv",
 		},
 	}
-	outputs := make([]plugindatamodel.ResourcedFileData, 2)
-	outputs[0] = plugindatamodel.ResourcedFileData{
+	outputs := make([]plugin.ResourcedFileData, 2)
+	outputs[0] = plugin.ResourcedFileData{
 		FileName: "Muncie.p04.tmp.hdf",
-		ResourceInfo: plugindatamodel.ResourceInfo{
+		ResourceInfo: plugin.ResourceInfo{
 			Store: "s3",
 			Root:  "cloud-wat-dev",
 			Path:  "/runs/realization_1/event_1",
 		},
 	}
-	outputs[1] = plugindatamodel.ResourcedFileData{
+	outputs[1] = plugin.ResourcedFileData{
 		FileName: "Muncie.log",
-		ResourceInfo: plugindatamodel.ResourceInfo{
+		ResourceInfo: plugin.ResourceInfo{
 			Store: "s3",
 			Root:  "cloud-wat-dev",
 			Path:  "/runs/realization_1/event_1",
 		},
 	}
-	payload := plugindatamodel.ModelPayload{
+	payload := plugin.ModelPayload{
 		/*ModelIdentifier: plugindatamodel.ModelIdentifier{
 			Name:        "Muncie",
 			Alternative: ".p04",
