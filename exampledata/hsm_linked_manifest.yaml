@@ -1,4 +1,4 @@
-linked_manifest_id: 3332
+linked_manifest_id: e46085f4-1934-4172-be74-efb611608544
 plugin:
   name: hydrograph_scaler
   image_and_tag: hydrographscaler:v0.0.1
@@ -8,16 +8,16 @@ plugin:
 model_identifier:
 inputs:
   - filename: event_configuration.json
-    source_data_identifier: 9
+    source_data_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d
   - filename: hsm.json
-    source_data_identifier: 3
+    source_data_identifier: 4a04b3f9-2413-4143-865a-769a9432c33f
 outputs:
   - filename: hsm1.csv
-    id: 11
+    id: 2b5c6b24-363d-4cbb-bf90-81c883f4bee6
   - filename: hsm2.csv
-    id: 12
+    id: 6637555f-9ec9-4695-a08d-9bcc4c8f272e
   - filename: hsm3.dss
-    id: 13
+    id: 9a8ea667-a75e-4196-9bff-c1595692410e
     internal_paths:
     - pathname: /a/b/c/d/e/f/
-      id: 14
+      id: 84ae5886-ce94-48ff-bfa0-0cc833eda56c

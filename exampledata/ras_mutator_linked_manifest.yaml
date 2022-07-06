@@ -1,4 +1,4 @@
-linked_manifest_id: 222
+linked_manifest_id: 437741a5-8f4d-4206-872d-0564153501cc
 plugin:
   name: ras-mutator
   image_and_tag: ras-mutator:v0.0.1
@@ -10,22 +10,22 @@ model_identifier:
     alternative: .p04
 inputs:
   - filename: Muncie.p04.tmp.hdf
-    source_data_identifier: 4
+    source_data_identifier: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2
     internal_paths: ## there might be dozens, each a different type.
       - pathname: '/Event Conditions/15696.24'
-        source_data_identifier: 11
+        source_file_identifier: 2b5c6b24-363d-4cbb-bf90-81c883f4bee6
       - pathname: '/Event Conditions/789563.89'
-        source_data_identifier: 12
+        source_file_identifier: 6637555f-9ec9-4695-a08d-9bcc4c8f272e
   - filename: Muncie.b04
-    source_data_identifier: 5
+    source_data_identifier: cb950b3f-e4ff-4109-936c-5991ad42fb45
     internal_paths:
       - pathname: 'BreachLocationA' 
-        source_data_identifier: 10
+        source_file_identifier: 954f6b09-8f2d-4b6c-b689-7ad4a73ec3f6
       - pathname: 'Boundary4' # not sure how these are actually stored.
-        source_path_identifier: 14
-        source_file_identifier: 13
+        source_path_identifier: 84ae5886-ce94-48ff-bfa0-0cc833eda56c
+        source_file_identifier: 9a8ea667-a75e-4196-9bff-c1595692410e
 outputs:
   - filename: Muncie.p04.tmp.hdf
-    id: 15
+    id: 000a662e-226d-405d-9616-7144ff4b5ea5
   - filename: Muncie.b04
-    id: 16
+    id: 37e5392d-84de-4de7-9271-8368fc697dc1

@@ -1,4 +1,4 @@
-linked_manifest_id: 2222
+linked_manifest_id: 2c852cf8-1db6-4464-88be-638c603c8e48
 plugin:
   name: fragilitycurve
   image_and_tag: fragilitycurve:v0.0.1
@@ -9,9 +9,9 @@ model_identifier:
   name: FC
 inputs:
   - filename: event_configuration.json
-    source_data_identifier: 9
+    source_data_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d
   - filename: fc.json
-    source_data_identifier: 2
+    source_data_identifier: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
 outputs:
   - filename: fc1.csv
-    id: 10
+    id: 954f6b09-8f2d-4b6c-b689-7ad4a73ec3f6

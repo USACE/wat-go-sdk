@@ -1,0 +1,20 @@
+payload_id: 0970649d-d358-5043-9863-c87a9dec8e7c
+event_index: 0
+inputs:
+    - filename: event_configuration.json
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/event_configuration.json
+    - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+      filename: fc.json
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/fc.json
+outputs:
+    - filename: fc1.csv
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/fc1.csv

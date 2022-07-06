@@ -1,4 +1,4 @@
-linked_manifest_id: 1112
+linked_manifest_id: 4aa60be5-a639-40cd-b006-acf6f1f595f4
 plugin:
   name: event_generator
   image_and_tag: event_generator:v0.0.1
@@ -9,7 +9,7 @@ model_identifier:
     name: EG
 inputs:
   - filename: eg.json
-    source_data_identifier: 1  
+    source_data_identifier: dd9be3e5-c4ee-485e-a2c7-c5e225677510  
 outputs:
   - filename: event_configuration.json
-    id: 9
+    id: cd84ad61-ebae-4cf6-93f4-b638b842cb3d

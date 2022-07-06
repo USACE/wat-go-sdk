@@ -1,0 +1,15 @@
+payload_id: 185518c3-9601-5ae2-96f1-64cf11f47f75
+event_index: 0
+inputs:
+    - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510
+      filename: EG.json
+      resource_info:
+        store: s3
+        root: model-library
+        path: /kanawha/models/EG.json
+outputs:
+    - filename: event_configuration.json
+      resource_info:
+        store: s3
+        root: cloud-wat-dev
+        path: ../exampledata/runs/event_0/event_configuration.json
