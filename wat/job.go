@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//JobManifest
+// JobManifest
 type JobManifest struct {
 	Id                      string                   `json:"job_identifier" yaml:"job_identifier"`
 	EventStartIndex         int                      `json:"event_start_index" yaml:"event_start_index"`
@@ -23,28 +23,33 @@ type JobManifest struct {
 
 func (jm JobManifest) ConvertToJob() (Job, error) {
 	job := Job{
-		Id:                uuid.New().String(), //make a uuid
+		Id:                uuid.New().String(), //make a uuid version 4
 		EventStartIndex:   jm.EventStartIndex,
 		EventEndIndex:     jm.EventEndIndex,
 		OutputDestination: jm.OutputDestination,
 	}
+
 	linkedManifests := make([]LinkedModelManifest, len(jm.LinkedManifestResources))
+
 	for idx, resourceInfo := range jm.LinkedManifestResources {
-		fmt.Println(resourceInfo.Path)
+		// fmt.Println(resourceInfo.Path)
 		lm := LinkedModelManifest{}
 		file, err := os.Open(resourceInfo.Path) //replace with filestore? injected?
 		if err != nil {
 			return job, err
 		}
+
 		defer file.Close()
 		b, err := ioutil.ReadAll(file)
 		if err != nil {
 			return job, err
 		}
+
 		err = yaml.Unmarshal(b, &lm)
 		if err != nil {
 			return job, err
 		}
+
 		linkedManifests[idx] = lm
 	}
 	job.Dag = DirectedAcyclicGraph{
@@ -55,7 +60,7 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 	return job, nil
 }
 
-//JobManager
+// JobManager
 type JobManager struct {
 	job Job
 	//store         filestore.FileStore
@@ -68,18 +73,25 @@ func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileSt
 	if err != nil {
 		return jobManager, err
 	}
+
 	orderedManifests, err := job.Dag.TopologicallySort()
 	if err != nil {
 		return jobManager, err
 	}
-	job.Dag.LinkedManifests = orderedManifests //*/
+
+	job.Dag.LinkedManifests = orderedManifests
 	jobManager.job = job
+
 	return jobManager, nil
 }
+
 func (jm JobManager) ProcessJob() error {
 	err := jm.job.ProvisionResources()
-	fmt.Println(err)
-	//add in defer and recover
+	if err != nil {
+		return err
+	}
+
+	// add in defer and recover
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered", r)
@@ -90,6 +102,7 @@ func (jm JobManager) ProcessJob() error {
 			}
 		}
 	}()
+
 	err = jm.job.GeneratePayloads() //jm.store
 	fmt.Println(err)
 	//create error channel.
@@ -157,21 +170,26 @@ func (job *Job) ProvisionResources() error {
 func (job Job) DestructResources() error {
 
 	//depends on cloud-resources//
-	fmt.Println("ka-blewy!!!")
+	fmt.Println("Placeholder: Deallocate / Deregister / Destroy resources")
 	return nil
 }
+
 func (job Job) eventLevelOutputDirectory(eventIndex int) string {
 	return fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
 }
+
 func (job Job) generatePayloadPath(eventIndex int, manifest LinkedModelManifest) string {
 	return fmt.Sprintf("%v%v_payload.yml", job.eventLevelOutputDirectory(eventIndex), manifest.Plugin.Name)
 }
+
 func (job Job) ValidateLinkages() error {
 	return job.payloadLooper(payloadValidator)
 }
+
 func payloadValidator(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error {
 	return nil
 }
+
 func (job Job) payloadLooper(processor PayloadProcessor) error {
 	for eventIndex := job.EventStartIndex; eventIndex < job.EventEndIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
@@ -195,16 +213,20 @@ func payloadWriter(payload plugin.ModelPayload, job Job, eventIndex int, modelMa
 	if err != nil {
 		return err
 	}
-	fmt.Println("")
-	fmt.Println(string(bytes))
-	//put payload in s3
+
+	// fmt.Println("")
+	// fmt.Println(string(bytes))
+
+	// put payload in s3
 	outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
 	path := job.generatePayloadPath(eventIndex, modelManifest)
-	fmt.Println("putting object in fs:", path)
+
+	// fmt.Println("putting object in fs:", path)
 	//_, err = fs.PutObject(path, bytes) //@TODO: replace with FileStore.
 	if _, err = os.Stat(path); os.IsNotExist(err) {
 		os.MkdirAll(outputDestinationPath, 0644)
 	}
+
 	err = os.WriteFile(path, bytes, 0644)
 	if err != nil {
 		fmt.Println("failure to push payload to filestore:", err)
@@ -219,7 +241,7 @@ func (job Job) GeneratePayloads() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("payloads!!!")
+	// fmt.Println("Payloads Generated")
 	return nil
 }
 
@@ -231,6 +253,7 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	fmt.Printf("computing event %v\n", eventIndex)
 	return nil
 }
+
 func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
@@ -240,14 +263,18 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	} else {
 		fmt.Println(dependencies)
 	}
+
 	payloadPath := job.generatePayloadPath(eventIndex, manifest)
 	fmt.Println(payloadPath)
 	//submit to batch.
-	batchjobarn := "batch arn returned." //@TODO: replace with call to batch
+	//@TODO: replace with call to batch
+	batchJobArn := "Placeholder for Batch response"
+
 	//set job arn
 	resources, ok := job.Dag.Resources[manifest.ManifestID]
+
 	if ok {
-		resources.JobARN = append(resources.JobARN, &batchjobarn)
+		resources.JobARN = append(resources.JobARN, &batchJobArn)
 		job.Dag.Resources[manifest.ManifestID] = resources
 	} else {
 		return errors.New("task for " + manifest.Plugin.Name)
