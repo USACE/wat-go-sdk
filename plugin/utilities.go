@@ -24,6 +24,36 @@ const (
 	DISABLED
 )
 
+type Log struct {
+	Message string `json:"message"`
+	Level   Level  `json:"level"`
+}
+type Status uint8
+
+const (
+	COMPUTING Status = iota
+	FAILED
+)
+
+func (s Status) String() string {
+	switch s {
+	case COMPUTING:
+		return "Computing"
+	case FAILED:
+		return "Failed"
+	default:
+		return "Unknown Status"
+	}
+}
+
+type StatusReport struct {
+	Status  Status `json:"status"`
+	Message string `json:"message"`
+}
+type ProgressReport struct {
+	Progress int8   `json:"progress"`
+	Message  string `json:"message"`
+}
 type Services struct {
 	config Config
 	fs     filestore.FileStore //should this be an array of file store? indexed by bucket name?
@@ -79,6 +109,14 @@ func (s *Services) initStore() error {
 	s.fs = fs
 	return nil
 }
+func (s Services) ReportProgress(report ProgressReport) {
+	//can be placeholder.
+	log.Info().Msg(fmt.Sprintf("Progress: %v, %v", report.Progress, report.Message))
+}
+func (s Services) ReportStatus(report StatusReport) {
+	//can be placeholder.
+	log.Info().Msg(fmt.Sprintf("Status: %v, %v", report.Status.String(), report.Message))
+}
 func (s Services) SetLogLevel(logLevel Level) {
 	switch logLevel {
 	case DEBUG:
@@ -99,24 +137,25 @@ func (s Services) SetLogLevel(logLevel Level) {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 }
-func (s Services) Log(logLevel Level, message string) {
-	switch logLevel {
+func (s Services) Log(logmessage Log) {
+	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
+	switch logmessage.Level {
 	case DEBUG:
-		log.Debug().Msg(message)
+		log.Debug().Msg(logmessage.Message)
 	case INFO:
-		log.Info().Msg(message)
+		log.Info().Msg(logmessage.Message)
 	case WARN:
-		log.Warn().Msg(message)
+		log.Warn().Msg(logmessage.Message)
 	case ERROR:
-		log.Error().Msg(message)
+		log.Error().Msg(logmessage.Message)
 	case FATAL:
-		log.Fatal().Msg(message)
+		log.Fatal().Msg(logmessage.Message)
 	case PANIC:
-		log.Panic().Msg(message)
+		log.Panic().Msg(logmessage.Message)
 	case DISABLED:
 		//log.Info().Msg(message)
 	default:
-		log.Info().Msg(message)
+		log.Info().Msg(logmessage.Message)
 	}
 }
 func (s Services) LoadJsonFile(filepath string, spec interface{}) error {
