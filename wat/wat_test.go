@@ -15,21 +15,23 @@ import (
 func TestReadJobManifest(t *testing.T) {
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := wat.JobManifest{}
-	readObject(t, path, &jobManifest)
+	readObject(t, path, &jobManifest, "Info")
 }
 
 func TestReadLinkedManifest(t *testing.T) {
 	path := "../exampledata/ras_mutator_linked_manifest.yaml"
 	linkedManifest := wat.LinkedModelManifest{}
-	readObject(t, path, &linkedManifest)
+	readObject(t, path, &linkedManifest, "Info")
 }
 
 func TestComputePayloads(t *testing.T) {
+	logLevel := ""
+	// logLevel := "Info"
 
 	//read a jobmanifest into memory
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := wat.JobManifest{}
-	readObject(t, path, &jobManifest)
+	readObject(t, path, &jobManifest, logLevel)
 
 	//construct a job manager
 	jobManager, err := wat.Init(jobManifest)
@@ -46,7 +48,7 @@ func TestComputePayloads(t *testing.T) {
 	}
 
 	//compute...
-	err = jobManager.ProcessJob()
+	err = jobManager.ProcessJob("Error")
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -85,7 +87,7 @@ func TestComputePayloads(t *testing.T) {
 	}
 }
 
-func readObject(t *testing.T, path string, object interface{}) {
+func readObject(t *testing.T, path string, object interface{}, logLevel string) {
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fail()
@@ -103,16 +105,21 @@ func readObject(t *testing.T, path string, object interface{}) {
 		log.Println(err)
 		t.Fail()
 	} else {
-		log.Println(string(b))
-		log.Println()
-		log.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-		log.Println()
+		if logLevel == "Info" {
+			fmt.Println(string(b))
+		}
+		newTestLine := "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		fmt.Println(newTestLine)
 		b2, err := yaml.Marshal(object)
 		if err != nil {
 			log.Println(err)
 			t.Fail()
 		}
-		log.Println(string(b2))
+
+		if logLevel == "Info" {
+			fmt.Println(string(b2))
+		}
+
 	}
 
 }
