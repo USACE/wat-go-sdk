@@ -13,25 +13,27 @@ import (
 func TestReadPayload(t *testing.T) {
 	path := "../exampledata/ras-mutator_payload.yml"
 	payload := plugin.ModelPayload{}
-	readobject(t, path, &payload)
+	readObject(t, path, &payload)
 }
 
 func TestReadManifest(t *testing.T) {
 	path := "../exampledata/ras_mutator_manifest.yml"
 	manifest := plugin.ModelManifest{}
-	readobject(t, path, &manifest)
+	readObject(t, path, &manifest)
 }
 
-func readobject(t *testing.T, path string, object interface{}) {
+func readObject(t *testing.T, path string, object interface{}) {
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fail()
 	}
 	defer file.Close()
+
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
 		t.Fail()
 	}
+
 	err = yaml.Unmarshal(b, object)
 	if err != nil {
 		log.Println(err)

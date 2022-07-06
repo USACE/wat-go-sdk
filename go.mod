@@ -1,8 +1,8 @@
 module github.com/usace/wat-go-sdk
 
-go 1.15
+go 1.18
 
 require (
-	github.com/google/uuid v1.1.1
+	github.com/google/uuid v1.3.0
 	gopkg.in/yaml.v3 v3.0.1
 )
