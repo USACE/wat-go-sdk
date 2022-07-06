@@ -4,23 +4,38 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/USACE/filestore"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
+)
+
+type Level uint8
+
+const (
+	INFO Level = iota + 1
+	WARN
+	ERROR
+	DEBUG
+	FATAL
+	PANIC
+	DISABLED
 )
 
 type Services struct {
 	config Config
-	fs     filestore.FileStore
+	fs     filestore.FileStore //should this be an array of file store? indexed by bucket name?
 	//sqs
 	//redis
 	//paul-bunyan
+
 }
 
 func InitServices(prefix string) (Services, error) {
 	var cfg Config
+	zerolog.SetGlobalLevel(zerolog.InfoLevel) //set from config
 	s := Services{}
 	if err := envconfig.Process(prefix, &cfg); err != nil {
 		return s, err
@@ -59,14 +74,53 @@ func (s *Services) initStore() error {
 	fs, err := filestore.NewFileStore(s3Conf)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Msg(err.Error())
 	}
 	s.fs = fs
 	return nil
 }
-
+func (s Services) SetLogLevel(logLevel Level) {
+	switch logLevel {
+	case DEBUG:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case INFO:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case WARN:
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case ERROR:
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case FATAL:
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case PANIC:
+		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+	case DISABLED:
+		zerolog.SetGlobalLevel(zerolog.Disabled)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+}
+func (s Services) Log(logLevel Level, message string) {
+	switch logLevel {
+	case DEBUG:
+		log.Debug().Msg(message)
+	case INFO:
+		log.Info().Msg(message)
+	case WARN:
+		log.Warn().Msg(message)
+	case ERROR:
+		log.Error().Msg(message)
+	case FATAL:
+		log.Fatal().Msg(message)
+	case PANIC:
+		log.Panic().Msg(message)
+	case DISABLED:
+		//log.Info().Msg(message)
+	default:
+		log.Info().Msg(message)
+	}
+}
 func (s Services) LoadJsonFile(filepath string, spec interface{}) error {
-	fmt.Println("reading:", filepath)
+	log.Info().Msg(fmt.Sprintf("reading:%v", filepath))
 	data, err := s.fs.GetObject(filepath)
 	if err != nil {
 		return err
