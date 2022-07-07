@@ -55,8 +55,10 @@ type ProgressReport struct {
 	Message  string `json:"message"`
 }
 type Services struct {
-	config Config
-	fs     filestore.FileStore //should this be an array of file store? indexed by bucket name?
+	config   Config
+	stores   map[string]filestore.FileStore //should this be an array of file store? indexed by bucket name?
+	loglevel Level
+
 	//sqs
 	//redis
 	//paul-bunyan
@@ -71,7 +73,8 @@ func InitServices(prefix string) (Services, error) {
 		return s, err
 	}
 	s.config = cfg
-	err := s.initStore()
+	s.stores = make(map[string]filestore.FileStore)
+	_, err := s.getStore(cfg.S3_BUCKET)
 	if err != nil {
 		return s, err
 	}
@@ -84,30 +87,38 @@ func (s Services) EnvironmentVariables() []string {
 func (s Services) Config() Config {
 	return s.config
 }
-func (s *Services) initStore() error {
-	//initalize S3 Store
-	mock := s.config.S3_MOCK
-	s3Conf := filestore.S3FSConfig{
-		S3Id:     s.config.AWS_ACCESS_KEY_ID,
-		S3Key:    s.config.AWS_SECRET_ACCESS_KEY,
-		S3Region: s.config.AWS_REGION,
-		S3Bucket: s.config.S3_BUCKET,
-	}
-	if mock {
-		s3Conf.Mock = mock
-		s3Conf.S3DisableSSL = s.config.S3_DISABLE_SSL
-		s3Conf.S3ForcePathStyle = s.config.S3_FORCE_PATH_STYLE
-		s3Conf.S3Endpoint = s.config.S3_ENDPOINT
-	}
-	fmt.Println(s3Conf)
+func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
+	fs, ok := s.stores[bucketName]
+	if !ok {
+		//initalize S3 Store
+		mock := s.config.S3_MOCK
+		s3Conf := filestore.S3FSConfig{
+			S3Id:     s.config.AWS_ACCESS_KEY_ID,
+			S3Key:    s.config.AWS_SECRET_ACCESS_KEY,
+			S3Region: s.config.AWS_REGION,
+			S3Bucket: bucketName,
+		}
+		if mock {
+			s3Conf.Mock = mock
+			s3Conf.S3DisableSSL = s.config.S3_DISABLE_SSL
+			s3Conf.S3ForcePathStyle = s.config.S3_FORCE_PATH_STYLE
+			s3Conf.S3Endpoint = s.config.S3_ENDPOINT
+		}
+		fmt.Println(s3Conf)
 
-	fs, err := filestore.NewFileStore(s3Conf)
-
-	if err != nil {
-		log.Fatal().Msg(err.Error())
+		nfs, err := filestore.NewFileStore(s3Conf)
+		fs = nfs
+		if err != nil {
+			log := Log{
+				Message: err.Error(),
+				Level:   FATAL,
+			}
+			s.Log(log)
+		}
+		s.stores[bucketName] = fs
 	}
-	s.fs = fs
-	return nil
+
+	return fs, nil
 }
 func (s Services) ReportProgress(report ProgressReport) {
 	//can be placeholder.
@@ -158,9 +169,10 @@ func (s Services) Log(logmessage Log) {
 		log.Info().Msg(logmessage.Message)
 	}
 }
-func (s Services) LoadJsonFile(filepath string, spec interface{}) error {
+func (s *Services) LoadJsonFile(bucket string, filepath string, spec interface{}) error {
 	log.Info().Msg(fmt.Sprintf("reading:%v", filepath))
-	data, err := s.fs.GetObject(filepath)
+	fs, err := s.getStore(bucket)
+	data, err := fs.GetObject(filepath)
 	if err != nil {
 		return err
 	}
@@ -179,9 +191,10 @@ func (s Services) LoadJsonFile(filepath string, spec interface{}) error {
 	return nil
 
 }
-func (s Services) LoadYamlFile(filepath string, spec interface{}) error {
+func (s *Services) LoadYamlFile(bucket string, filepath string, spec interface{}) error {
 	fmt.Println("reading:", filepath)
-	data, err := s.fs.GetObject(filepath)
+	fs, err := s.getStore(bucket)
+	data, err := fs.GetObject(filepath)
 	if err != nil {
 		return err
 	}
@@ -202,10 +215,11 @@ func (s Services) LoadYamlFile(filepath string, spec interface{}) error {
 }
 
 // UpLoadToS3
-func (s Services) UpLoadFile(newS3Path string, fileBytes []byte) (filestore.FileOperationOutput, error) {
+func (s *Services) UpLoadFile(bucket string, newS3Path string, fileBytes []byte) (filestore.FileOperationOutput, error) {
 	var repsonse *filestore.FileOperationOutput
 	var err error
-	repsonse, err = s.fs.PutObject(newS3Path, fileBytes)
+	fs, err := s.getStore(bucket)
+	repsonse, err = fs.PutObject(newS3Path, fileBytes)
 	if err != nil {
 		return *repsonse, err
 	}

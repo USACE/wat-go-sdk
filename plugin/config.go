@@ -11,11 +11,11 @@ type Config struct {
 	AWS_ACCESS_KEY_ID     string
 	AWS_SECRET_ACCESS_KEY string
 	AWS_REGION            string
-	S3_MOCK               bool
+	S3_MOCK               bool //for testing with minio
 	S3_BUCKET             string
 	S3_ENDPOINT           string
-	S3_DISABLE_SSL        bool
-	S3_FORCE_PATH_STYLE   bool
+	S3_DISABLE_SSL        bool //for testing with minio
+	S3_FORCE_PATH_STYLE   bool //for testing with minio
 	//REDIS_HOST            string
 	//REDIS_PORT            string
 	//REDIS_PASSWORD        string
