@@ -76,6 +76,15 @@ linked_manifests: #could be stored in a database rather than files on a
 #  - store: s3
 #    root: model-library
 #    path: /kanawha/models/ras_runner_linked_manifest.yaml
+required_resources:
+  - linked_manifest_id: 4aa60be5-a639-40cd-b006-acf6f1f595f4
+    compute_environment: defaultstringtobereplacedlater
+  - linked_manifest_id: 2c852cf8-1db6-4464-88be-638c603c8e48
+    compute_environment: defaultstringtobereplacedlater
+  - linked_manifest_id: e46085f4-1934-4172-be74-efb611608544
+    compute_environment: defaultstringtobereplacedlater
+  - linked_manifest_id: 437741a5-8f4d-4206-872d-0564153501cc
+    compute_environment: defaultstringtobereplacedlater
 output_destination:
   store: s3
   root: cloud-wat-dev
