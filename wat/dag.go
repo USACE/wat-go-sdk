@@ -274,6 +274,7 @@ func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, event
 		plugin.Logger.Log(plugin.Log{
 			Message: fmt.Sprintf("\t\t%v | internal paths = %v\n", linkedFile.SourceDataId, len(linkedFile.InternalPaths)),
 			Level:   plugin.INFO,
+			Sender:  "DAG Linking",
 		})
 
 		if len(linkedFile.InternalPaths) > 0 {

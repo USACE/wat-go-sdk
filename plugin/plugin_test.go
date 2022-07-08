@@ -115,6 +115,7 @@ func TestWriteLog(t *testing.T) {
 	plugin.Logger.Log(plugin.Log{
 		Message: "WARNING",
 		Level:   plugin.WARN,
+		Sender:  "testing",
 	})
 	plugin.Logger.Log(plugin.Log{
 		Message: "INFO",

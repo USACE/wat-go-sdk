@@ -98,6 +98,7 @@ func (jm JobManager) ProcessJob() error {
 			plugin.Logger.Log(plugin.Log{
 				Message: fmt.Sprintf("Recovered %v\nTearing Down Resources", r),
 				Level:   plugin.ERROR,
+				Sender:  jm.job.Id,
 			})
 			err = jm.job.DestructResources()
 			if err != nil {
@@ -120,11 +121,13 @@ func (jm JobManager) ProcessJob() error {
 				plugin.Logger.Log(plugin.Log{
 					Message: fmt.Sprintf("%v\n", err),
 					Level:   plugin.ERROR,
+					Sender:  jm.job.Id,
 				})
 			}
 			plugin.Logger.Log(plugin.Log{
 				Message: fmt.Sprintf("Computed %v\n", index),
 				Level:   plugin.INFO,
+				Sender:  jm.job.Id,
 			})
 		}(i)
 
@@ -135,12 +138,14 @@ func (jm JobManager) ProcessJob() error {
 		plugin.Logger.Log(plugin.Log{
 			Message: fmt.Sprintf("%v\n", err),
 			Level:   plugin.ERROR,
+			Sender:  jm.job.Id,
 		})
 		return err
 	}
 	plugin.Logger.Log(plugin.Log{
 		Message: fmt.Sprint("\nJob Processed!\n\n"),
 		Level:   plugin.INFO,
+		Sender:  jm.job.Id,
 	})
 	return nil
 }
@@ -196,6 +201,7 @@ func (job Job) DestructResources() error {
 	plugin.Logger.Log(plugin.Log{
 		Message: "Placeholder: Deallocate / Deregister / Destroy resources",
 		Level:   plugin.INFO,
+		Sender:  job.Id,
 	})
 	return nil
 }
@@ -226,6 +232,7 @@ func (job Job) payloadLooper(processor PayloadProcessor) error {
 			plugin.Logger.Log(plugin.Log{
 				Message: fmt.Sprint(fmt.Sprintln("\n", n.ImageAndTag), fmt.Sprintln("\t", outputDestinationPath)),
 				Level:   plugin.INFO,
+				Sender:  job.Id,
 			})
 			payload, err := job.Dag.GeneratePayload(n, eventIndex, job.OutputDestination)
 			if err != nil {
@@ -265,6 +272,7 @@ func payloadWriter(payload plugin.ModelPayload, job Job, eventIndex int, modelMa
 		plugin.Logger.Log(plugin.Log{
 			Message: fmt.Sprintf("failure to push payload to filestore: %v\n", err),
 			Level:   plugin.ERROR,
+			Sender:  job.Id,
 		})
 
 		return err
@@ -290,6 +298,7 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	plugin.Logger.Log(plugin.Log{
 		Message: fmt.Sprintf("computing event %v\n", eventIndex),
 		Level:   plugin.INFO,
+		Sender:  job.Id,
 	})
 	return nil
 }
@@ -305,6 +314,7 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 		plugin.Logger.Log(plugin.Log{
 			Message: fmt.Sprint(dependencies),
 			Level:   plugin.INFO,
+			Sender:  job.Id,
 		})
 	}
 
@@ -312,6 +322,7 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	plugin.Logger.Log(plugin.Log{
 		Message: payloadPath,
 		Level:   plugin.INFO,
+		Sender:  job.Id,
 	})
 	//submit to batch.
 	//@TODO: replace with call to batch

@@ -38,12 +38,14 @@ var Logger = GlobalLogger{
 type Log struct {
 	Message string `json:"message"`
 	Level   Level  `json:"loglevel"`
+	Sender  string `json:"sender"`
 }
 
 //zeroLog is a struct to parse the returned log from zerolog for the purpose of styling log outputs if SetStyle is used.
 type zeroLog struct {
 	Message string `json:"message"`
 	Level   string `json:"level"`
+	Sender  string `json:"sender"` //custom string feild
 }
 type Status uint8
 
@@ -130,6 +132,7 @@ func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
 			log := Log{
 				Message: err.Error(),
 				Level:   FATAL,
+				Sender:  "Plugin Services",
 			}
 			Logger.Log(log)
 		}
@@ -138,13 +141,13 @@ func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
 
 	return fs, nil
 }
-func (s Services) ReportProgress(report ProgressReport) {
+func (s Services) ReportProgress(report ProgressReport, linkedManifestId string) {
 	//can be placeholder.
-	log.Info().Msg(fmt.Sprintf("Progress: %v, %v", report.Progress, report.Message))
+	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tProgress: %v, %v", linkedManifestId, report.Progress, report.Message))
 }
-func (s Services) ReportStatus(report StatusReport) {
+func (s Services) ReportStatus(report StatusReport, linkedManifestId string) {
 	//can be placeholder.
-	log.Info().Msg(fmt.Sprintf("Status: %v, %v", report.Status.String(), report.Message))
+	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tStatus: %v, %v", linkedManifestId, report.Status.String(), report.Message))
 }
 
 type logWriter struct {
@@ -156,7 +159,7 @@ func (w logWriter) Write(b []byte) (n int, err error) {
 	if errjson != nil {
 		return 1, errjson
 	}
-	fmt.Printf("%v\n\t%v\n", log.Level, log.Message)
+	fmt.Printf("%v issues %v\n\t%v\n", log.Sender, log.Level, log.Message)
 	return 0, nil
 }
 func (logger *GlobalLogger) SetStyle() {
@@ -184,26 +187,26 @@ func (logger *GlobalLogger) SetLogLevel(logLevel Level) {
 	}
 	logger.Level = logLevel
 }
-func (logger GlobalLogger) Log(logmessage Log) {
+func (logger GlobalLogger) Log(LogMessage Log) {
 	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
-	if logger.Level <= logmessage.Level {
-		switch logmessage.Level {
+	if logger.Level <= LogMessage.Level {
+		switch LogMessage.Level {
 		case DEBUG:
-			logger.logger.Debug().Msg(logmessage.Message)
+			logger.logger.Debug().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case INFO:
-			logger.logger.Info().Msg(logmessage.Message)
+			logger.logger.Info().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case WARN:
-			logger.logger.Warn().Msg(logmessage.Message)
+			logger.logger.Warn().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case ERROR:
-			logger.logger.Error().Msg(logmessage.Message)
+			logger.logger.Error().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case FATAL:
-			logger.logger.Fatal().Msg(logmessage.Message)
+			logger.logger.Fatal().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case PANIC:
-			logger.logger.Panic().Msg(logmessage.Message)
+			logger.logger.Panic().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		case DISABLED:
 			//log.Info().Msg(message)
 		default:
-			logger.logger.Info().Msg(logmessage.Message)
+			logger.logger.Info().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
 		}
 	}
 }
@@ -211,6 +214,7 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 	Logger.Log(Log{
 		Message: fmt.Sprintf("reading:%v", filepath),
 		Level:   INFO,
+		Sender:  "Plugin Services",
 	})
 	payload := ModelPayload{}
 	fs, err := s.getStore(s.config.S3_BUCKET)
@@ -232,6 +236,7 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 		Logger.Log(Log{
 			Message: fmt.Sprintf("error reading:%v", filepath),
 			Level:   ERROR,
+			Sender:  "Plugin Services",
 		})
 		return payload, err
 	}
