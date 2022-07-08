@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +27,8 @@ const (
 )
 
 type GlobalLogger struct {
-	Level
+	logger zerolog.Logger
+	Level  //i believe this will be global to the container each container having its own possible level (and wat having its own level too.)
 }
 
 var Logger = GlobalLogger{
@@ -35,7 +37,13 @@ var Logger = GlobalLogger{
 
 type Log struct {
 	Message string `json:"message"`
-	Level   Level  `json:"level"`
+	Level   Level  `json:"loglevel"`
+}
+
+//zeroLog is a struct to parse the returned log from zerolog for the purpose of styling log outputs if SetStyle is used.
+type zeroLog struct {
+	Message string `json:"message"`
+	Level   string `json:"level"`
 }
 type Status uint8
 
@@ -67,9 +75,8 @@ type ProgressReport struct {
 	Message  string `json:"message"`
 }
 type Services struct {
-	config   Config
-	stores   map[string]filestore.FileStore //should this be an array of file store? indexed by bucket name?
-	loglevel Level
+	config Config
+	stores map[string]filestore.FileStore //should this be an array of file store? indexed by bucket name?
 
 	//sqs
 	//redis
@@ -79,7 +86,6 @@ type Services struct {
 
 func InitServices(prefix string) (Services, error) {
 	var cfg Config
-	//zerolog.SetGlobalLevel(zerolog.InfoLevel) //set from config?
 	s := Services{}
 	if err := envconfig.Process(prefix, &cfg); err != nil {
 		return s, err
@@ -140,20 +146,37 @@ func (s Services) ReportStatus(report StatusReport) {
 	//can be placeholder.
 	log.Info().Msg(fmt.Sprintf("Status: %v, %v", report.Status.String(), report.Message))
 }
+
+type logWriter struct {
+}
+
+func (w logWriter) Write(b []byte) (n int, err error) {
+	log := zeroLog{}
+	errjson := json.Unmarshal(b, &log)
+	if errjson != nil {
+		return 1, errjson
+	}
+	fmt.Printf("%v\n\t%v\n", log.Level, log.Message)
+	return 0, nil
+}
+func (logger *GlobalLogger) SetStyle() {
+	w := logWriter{}
+	logger.logger = zerolog.New(w)
+}
 func (logger *GlobalLogger) SetLogLevel(logLevel Level) {
 	switch logLevel {
 	case DEBUG:
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	case INFO:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	case WARN:
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	case ERROR:
-		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
 	case FATAL:
-		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	case PANIC:
-		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	case DISABLED:
 		zerolog.SetGlobalLevel(zerolog.Disabled)
 	default:
@@ -163,24 +186,24 @@ func (logger *GlobalLogger) SetLogLevel(logLevel Level) {
 }
 func (logger GlobalLogger) Log(logmessage Log) {
 	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
-	if logger.Level >= logmessage.Level {
+	if logger.Level <= logmessage.Level {
 		switch logmessage.Level {
 		case DEBUG:
-			log.Debug().Msg(logmessage.Message)
+			logger.logger.Debug().Msg(logmessage.Message)
 		case INFO:
-			log.Info().Msg(logmessage.Message)
+			logger.logger.Info().Msg(logmessage.Message)
 		case WARN:
-			log.Warn().Msg(logmessage.Message)
+			logger.logger.Warn().Msg(logmessage.Message)
 		case ERROR:
-			log.Error().Msg(logmessage.Message)
+			logger.logger.Error().Msg(logmessage.Message)
 		case FATAL:
-			log.Fatal().Msg(logmessage.Message)
+			logger.logger.Fatal().Msg(logmessage.Message)
 		case PANIC:
-			log.Panic().Msg(logmessage.Message)
+			logger.logger.Panic().Msg(logmessage.Message)
 		case DISABLED:
 			//log.Info().Msg(message)
 		default:
-			log.Info().Msg(logmessage.Message)
+			logger.logger.Info().Msg(logmessage.Message)
 		}
 	}
 }

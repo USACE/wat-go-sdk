@@ -104,3 +104,20 @@ func TestWritePayload(t *testing.T) {
 	log.Println(string(b))
 	log.Println(payload)
 }
+
+func TestWriteLog(t *testing.T) {
+	plugin.Logger.SetLogLevel(plugin.WARN)
+	plugin.Logger.SetStyle()
+	plugin.Logger.Log(plugin.Log{
+		Message: "ERROR",
+		Level:   plugin.ERROR,
+	})
+	plugin.Logger.Log(plugin.Log{
+		Message: "WARNING",
+		Level:   plugin.WARN,
+	})
+	plugin.Logger.Log(plugin.Log{
+		Message: "INFO",
+		Level:   plugin.INFO,
+	})
+}

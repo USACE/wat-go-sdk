@@ -26,7 +26,8 @@ func TestReadLinkedManifest(t *testing.T) {
 
 func TestComputePayloads(t *testing.T) {
 	//read a jobmanifest into memory
-	watplugin.Logger.SetLogLevel(watplugin.ERROR)
+	watplugin.Logger.SetStyle()
+	watplugin.Logger.SetLogLevel(watplugin.INFO)
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := wat.JobManifest{}
 	readObject(t, path, &jobManifest)

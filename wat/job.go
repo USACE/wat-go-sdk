@@ -13,12 +13,13 @@ import (
 
 // JobManifest
 type JobManifest struct {
-	Id                      string                   `json:"job_identifier" yaml:"job_identifier"`
-	EventStartIndex         int                      `json:"event_start_index" yaml:"event_start_index"`
-	EventEndIndex           int                      `json:"event_end_index" yaml:"event_end_index"`
-	Models                  []plugin.ModelIdentifier `json:"models" yaml:"models"`
-	LinkedManifestResources []plugin.ResourceInfo    `json:"linked_manifests" yaml:"linked_manifests"`
-	OutputDestination       plugin.ResourceInfo      `json:"output_destination" yaml:"output_destination"`
+	Id                      string                        `json:"job_identifier" yaml:"job_identifier"`
+	EventStartIndex         int                           `json:"event_start_index" yaml:"event_start_index"`
+	EventEndIndex           int                           `json:"event_end_index" yaml:"event_end_index"`
+	Models                  []plugin.ModelIdentifier      `json:"models" yaml:"models"`
+	LinkedManifestResources []plugin.ResourceInfo         `json:"linked_manifests" yaml:"linked_manifests"`
+	ComputeResources        []ComputeResourceRequirements `json:"resource_requirements" yaml:"resource_requirements"`
+	OutputDestination       plugin.ResourceInfo           `json:"output_destination" yaml:"output_destination"`
 }
 
 func (jm JobManifest) ConvertToJob() (Job, error) {
