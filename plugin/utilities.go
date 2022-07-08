@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -205,21 +206,21 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 	}
 
 	return payload, nil
-
 }
 
 // UpLoadToS3
-func (s *Services) UpLoadFile(bucket string, newS3Path string, fileBytes []byte) (filestore.FileOperationOutput, error) {
-	var repsonse *filestore.FileOperationOutput
-	var err error
-	fs, err := s.getStore(bucket)
-	if err != nil {
-		return *repsonse, err
+func (s *Services) UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
+	if resource.Store != "S3" {
+		return errors.New("the resource is not defined as s3")
 	}
-	repsonse, err = fs.PutObject(newS3Path, fileBytes)
+	fs, err := s.getStore(resource.Root)
 	if err != nil {
-		return *repsonse, err
+		return err
+	}
+	_, err = fs.PutObject(resource.Path, fileBytes)
+	if err != nil {
+		return err
 	}
 
-	return *repsonse, err
+	return err
 }
