@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -33,6 +32,7 @@ type Status uint8
 const (
 	COMPUTING Status = iota
 	FAILED
+	SUCCEEDED
 )
 
 func (s Status) String() string {
@@ -41,6 +41,8 @@ func (s Status) String() string {
 		return "Computing"
 	case FAILED:
 		return "Failed"
+	case SUCCEEDED:
+		return "Succeeded"
 	default:
 		return "Unknown Status"
 	}
@@ -51,7 +53,7 @@ type StatusReport struct {
 	Message string `json:"message"`
 }
 type ProgressReport struct {
-	Progress int8   `json:"progress"`
+	Progress int8   `json:"progress"` //whole integers from 0 to 100...
 	Message  string `json:"message"`
 }
 type Services struct {
@@ -128,7 +130,7 @@ func (s Services) ReportStatus(report StatusReport) {
 	//can be placeholder.
 	log.Info().Msg(fmt.Sprintf("Status: %v, %v", report.Status.String(), report.Message))
 }
-func (s Services) SetLogLevel(logLevel Level) {
+func (s *Services) SetLogLevel(logLevel Level) {
 	switch logLevel {
 	case DEBUG:
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -147,70 +149,62 @@ func (s Services) SetLogLevel(logLevel Level) {
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+	s.loglevel = logLevel
 }
 func (s Services) Log(logmessage Log) {
 	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
-	switch logmessage.Level {
-	case DEBUG:
-		log.Debug().Msg(logmessage.Message)
-	case INFO:
-		log.Info().Msg(logmessage.Message)
-	case WARN:
-		log.Warn().Msg(logmessage.Message)
-	case ERROR:
-		log.Error().Msg(logmessage.Message)
-	case FATAL:
-		log.Fatal().Msg(logmessage.Message)
-	case PANIC:
-		log.Panic().Msg(logmessage.Message)
-	case DISABLED:
-		//log.Info().Msg(message)
-	default:
-		log.Info().Msg(logmessage.Message)
+	if s.loglevel >= logmessage.Level {
+		switch logmessage.Level {
+		case DEBUG:
+			log.Debug().Msg(logmessage.Message)
+		case INFO:
+			log.Info().Msg(logmessage.Message)
+		case WARN:
+			log.Warn().Msg(logmessage.Message)
+		case ERROR:
+			log.Error().Msg(logmessage.Message)
+		case FATAL:
+			log.Fatal().Msg(logmessage.Message)
+		case PANIC:
+			log.Panic().Msg(logmessage.Message)
+		case DISABLED:
+			//log.Info().Msg(message)
+		default:
+			log.Info().Msg(logmessage.Message)
+		}
 	}
+
 }
-func (s *Services) LoadJsonFile(bucket string, filepath string, spec interface{}) error {
-	log.Info().Msg(fmt.Sprintf("reading:%v", filepath))
-	fs, err := s.getStore(bucket)
+func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
+	s.Log(Log{
+		Message: fmt.Sprintf("reading:%v", filepath),
+		Level:   INFO,
+	})
+	payload := ModelPayload{}
+	fs, err := s.getStore(s.config.S3_BUCKET)
+	if err != nil {
+		return payload, err
+	}
 	data, err := fs.GetObject(filepath)
 	if err != nil {
-		return err
+		return payload, err
 	}
 
 	body, err := ioutil.ReadAll(data)
 	if err != nil {
-		return err
+		return payload, err
 	}
 
-	errjson := json.Unmarshal(body, &spec)
-	if errjson != nil {
-		fmt.Println("error:", errjson)
-		return errjson
-	}
-
-	return nil
-
-}
-func (s *Services) LoadYamlFile(bucket string, filepath string, spec interface{}) error {
-	fmt.Println("reading:", filepath)
-	fs, err := s.getStore(bucket)
-	data, err := fs.GetObject(filepath)
+	err = yaml.Unmarshal(body, &payload)
 	if err != nil {
-		return err
+		s.Log(Log{
+			Message: fmt.Sprintf("error reading:%v", filepath),
+			Level:   ERROR,
+		})
+		return payload, err
 	}
 
-	body, err := ioutil.ReadAll(data)
-	if err != nil {
-		return err
-	}
-
-	errjson := yaml.Unmarshal(body, &spec)
-	if errjson != nil {
-		fmt.Println("error:", errjson)
-		return errjson
-	}
-
-	return nil
+	return payload, nil
 
 }
 
@@ -219,6 +213,9 @@ func (s *Services) UpLoadFile(bucket string, newS3Path string, fileBytes []byte)
 	var repsonse *filestore.FileOperationOutput
 	var err error
 	fs, err := s.getStore(bucket)
+	if err != nil {
+		return *repsonse, err
+	}
 	repsonse, err = fs.PutObject(newS3Path, fileBytes)
 	if err != nil {
 		return *repsonse, err
