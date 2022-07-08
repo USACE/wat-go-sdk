@@ -208,9 +208,10 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 	return payload, nil
 }
 
-// UpLoadToS3
+// UpLoadFile
 func (s *Services) UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 	if resource.Store != "S3" {
+		//check if local?
 		return errors.New("the resource is not defined as s3")
 	}
 	fs, err := s.getStore(resource.Root)
