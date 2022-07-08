@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/USACE/filestore"
 	"github.com/kelseyhightower/envconfig"
@@ -23,6 +24,14 @@ const (
 	PANIC
 	DISABLED
 )
+
+type GlobalLogger struct {
+	Level
+}
+
+var Logger = GlobalLogger{
+	Level: INFO,
+}
 
 type Log struct {
 	Message string `json:"message"`
@@ -70,7 +79,7 @@ type Services struct {
 
 func InitServices(prefix string) (Services, error) {
 	var cfg Config
-	zerolog.SetGlobalLevel(zerolog.InfoLevel) //set from config
+	//zerolog.SetGlobalLevel(zerolog.InfoLevel) //set from config?
 	s := Services{}
 	if err := envconfig.Process(prefix, &cfg); err != nil {
 		return s, err
@@ -107,7 +116,7 @@ func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
 			s3Conf.S3ForcePathStyle = s.config.S3_FORCE_PATH_STYLE
 			s3Conf.S3Endpoint = s.config.S3_ENDPOINT
 		}
-		fmt.Println(s3Conf)
+		//fmt.Println(s3Conf)
 
 		nfs, err := filestore.NewFileStore(s3Conf)
 		fs = nfs
@@ -116,7 +125,7 @@ func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
 				Message: err.Error(),
 				Level:   FATAL,
 			}
-			s.Log(log)
+			Logger.Log(log)
 		}
 		s.stores[bucketName] = fs
 	}
@@ -131,7 +140,7 @@ func (s Services) ReportStatus(report StatusReport) {
 	//can be placeholder.
 	log.Info().Msg(fmt.Sprintf("Status: %v, %v", report.Status.String(), report.Message))
 }
-func (s *Services) SetLogLevel(logLevel Level) {
+func (logger *GlobalLogger) SetLogLevel(logLevel Level) {
 	switch logLevel {
 	case DEBUG:
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -150,11 +159,11 @@ func (s *Services) SetLogLevel(logLevel Level) {
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	s.loglevel = logLevel
+	logger.Level = logLevel
 }
-func (s Services) Log(logmessage Log) {
+func (logger GlobalLogger) Log(logmessage Log) {
 	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
-	if s.loglevel >= logmessage.Level {
+	if logger.Level >= logmessage.Level {
 		switch logmessage.Level {
 		case DEBUG:
 			log.Debug().Msg(logmessage.Message)
@@ -174,10 +183,9 @@ func (s Services) Log(logmessage Log) {
 			log.Info().Msg(logmessage.Message)
 		}
 	}
-
 }
 func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
-	s.Log(Log{
+	Logger.Log(Log{
 		Message: fmt.Sprintf("reading:%v", filepath),
 		Level:   INFO,
 	})
@@ -198,7 +206,7 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 
 	err = yaml.Unmarshal(body, &payload)
 	if err != nil {
-		s.Log(Log{
+		Logger.Log(Log{
 			Message: fmt.Sprintf("error reading:%v", filepath),
 			Level:   ERROR,
 		})
@@ -213,6 +221,9 @@ func (s *Services) UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 	if resource.Store != "S3" {
 		//check if local?
 		return errors.New("the resource is not defined as s3")
+	}
+	if strings.Contains(resource.Path, "../") {
+		return errors.New("it is against policy to have relative paths for an s3 store")
 	}
 	fs, err := s.getStore(resource.Root)
 	if err != nil {

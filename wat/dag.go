@@ -178,7 +178,7 @@ func (dag DirectedAcyclicGraph) Dependencies(lm LinkedModelManifest, eventIndex 
 	return uniqueDependencies, nil
 }
 
-func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventIndex int, outputDestination plugin.ResourceInfo, logLevel string) (plugin.ModelPayload, error) {
+func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventIndex int, outputDestination plugin.ResourceInfo) (plugin.ModelPayload, error) {
 	payload := plugin.ModelPayload{}
 	payload.EventIndex = eventIndex
 	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventIndex))).String()
@@ -188,7 +188,7 @@ func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventInd
 		resourcedInput, err := dag.linkToPluginOutput(input, eventIndex, outputDestination)
 		if err != nil {
 			//if links were not satisfied, link to model data defined in job manifest
-			file, err := dag.linkToModelData(input, eventIndex, outputDestination, logLevel)
+			file, err := dag.linkToModelData(input, eventIndex, outputDestination)
 			if err != nil {
 				//if link not found, fail out.
 				return payload, err
@@ -262,7 +262,7 @@ func (dag DirectedAcyclicGraph) linkInternalPaths(linkedFile LinkedFileData, eve
 	return internalPaths, nil
 }
 
-func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, eventIndex int, outputDestination plugin.ResourceInfo, logLevel string) (plugin.ResourcedFileData, error) {
+func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, eventIndex int, outputDestination plugin.ResourceInfo) (plugin.ResourcedFileData, error) {
 	returnFile := plugin.ResourcedFileData{}
 	file, ok := dag.producesModelFile(linkedFile)
 	if ok {
@@ -271,9 +271,10 @@ func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, event
 		returnFile.FileName = file.FileName
 		returnFile.ResourceInfo = file.ResourceInfo
 
-		if logLevel == "Info" {
-			fmt.Printf("\t\t%v | internal paths = %v\n", linkedFile.SourceDataId, len(linkedFile.InternalPaths))
-		}
+		plugin.Logger.Log(plugin.Log{
+			Message: fmt.Sprintf("\t\t%v | internal paths = %v\n", linkedFile.SourceDataId, len(linkedFile.InternalPaths)),
+			Level:   plugin.INFO,
+		})
 
 		if len(linkedFile.InternalPaths) > 0 {
 			resourcedInternalPaths, err := dag.linkInternalPaths(linkedFile, eventIndex, outputDestination)

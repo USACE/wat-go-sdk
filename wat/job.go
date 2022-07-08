@@ -85,7 +85,7 @@ func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileSt
 	return jobManager, nil
 }
 
-func (jm JobManager) ProcessJob(logLevel string) error {
+func (jm JobManager) ProcessJob() error {
 	err := jm.job.ProvisionResources()
 	if err != nil {
 		return err
@@ -94,8 +94,10 @@ func (jm JobManager) ProcessJob(logLevel string) error {
 	// add in defer and recover
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered", r)
-			fmt.Println("Tearing Down Resources")
+			plugin.Logger.Log(plugin.Log{
+				Message: fmt.Sprintf("Recovered %v\nTearing Down Resources", r),
+				Level:   plugin.ERROR,
+			})
 			err = jm.job.DestructResources()
 			if err != nil {
 				fmt.Println(err)
@@ -103,7 +105,7 @@ func (jm JobManager) ProcessJob(logLevel string) error {
 		}
 	}()
 
-	err = jm.job.GeneratePayloads(logLevel) //jm.store
+	err = jm.job.GeneratePayloads() //jm.store
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -112,19 +114,33 @@ func (jm JobManager) ProcessJob(logLevel string) error {
 	//create error channel.
 	for i := jm.job.EventStartIndex; i < jm.job.EventEndIndex; i++ {
 		go func(index int) {
-			err = jm.job.ComputeEvent(index, logLevel)
-			fmt.Println(err)
+			err = jm.job.ComputeEvent(index)
+			if err != nil {
+				plugin.Logger.Log(plugin.Log{
+					Message: fmt.Sprintf("%v\n", err),
+					Level:   plugin.ERROR,
+				})
+			}
+			plugin.Logger.Log(plugin.Log{
+				Message: fmt.Sprintf("Computed %v\n", index),
+				Level:   plugin.INFO,
+			})
 		}(i)
 
 	}
 	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
 	err = jm.job.DestructResources()
 	if err != nil {
-		fmt.Println(err)
+		plugin.Logger.Log(plugin.Log{
+			Message: fmt.Sprintf("%v\n", err),
+			Level:   plugin.ERROR,
+		})
 		return err
 	}
-
-	fmt.Printf("\nJob Processed!\n\n")
+	plugin.Logger.Log(plugin.Log{
+		Message: fmt.Sprint("\nJob Processed!\n\n"),
+		Level:   plugin.INFO,
+	})
 	return nil
 }
 
@@ -176,7 +192,10 @@ func (job *Job) ProvisionResources() error {
 func (job Job) DestructResources() error {
 
 	//depends on cloud-resources//
-	fmt.Println("\nPlaceholder: Deallocate / Deregister / Destroy resources")
+	plugin.Logger.Log(plugin.Log{
+		Message: "Placeholder: Deallocate / Deregister / Destroy resources",
+		Level:   plugin.INFO,
+	})
 	return nil
 }
 
@@ -189,27 +208,25 @@ func (job Job) generatePayloadPath(eventIndex int, manifest LinkedModelManifest)
 }
 
 func (job Job) ValidateLinkages() error {
-	return job.payloadLooper(payloadValidator, "Info")
+	return job.payloadLooper(payloadValidator)
 }
 
 func payloadValidator(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error {
 	return nil
 }
 
-func (job Job) payloadLooper(processor PayloadProcessor, logLevel string) error {
+func (job Job) payloadLooper(processor PayloadProcessor) error {
 
 	for eventIndex := job.EventStartIndex; eventIndex < job.EventEndIndex; eventIndex++ {
 		//write out payloads to filestore. How do i get a handle on filestore from here?
 		outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
 
 		for _, n := range job.Dag.LinkedManifests {
-
-			if logLevel == "Info" {
-				fmt.Println("\n", n.ImageAndTag)
-				fmt.Println("\t", outputDestinationPath)
-			}
-
-			payload, err := job.Dag.GeneratePayload(n, eventIndex, job.OutputDestination, logLevel)
+			plugin.Logger.Log(plugin.Log{
+				Message: fmt.Sprint(fmt.Sprintln("\n", n.ImageAndTag), fmt.Sprintln("\t", outputDestinationPath)),
+				Level:   plugin.INFO,
+			})
+			payload, err := job.Dag.GeneratePayload(n, eventIndex, job.OutputDestination)
 			if err != nil {
 				return err
 			}
@@ -244,15 +261,19 @@ func payloadWriter(payload plugin.ModelPayload, job Job, eventIndex int, modelMa
 
 	err = os.WriteFile(path, bytes, 0644)
 	if err != nil {
-		fmt.Println("failure to push payload to filestore:", err)
+		plugin.Logger.Log(plugin.Log{
+			Message: fmt.Sprintf("failure to push payload to filestore: %v\n", err),
+			Level:   plugin.ERROR,
+		})
+
 		return err
 	}
 	return nil
 }
 
 //GeneratePayloads
-func (job Job) GeneratePayloads(logLevel string) error {
-	err := job.payloadLooper(payloadWriter, logLevel)
+func (job Job) GeneratePayloads() error {
+	err := job.payloadLooper(payloadWriter)
 	if err != nil {
 		return err
 	}
@@ -261,18 +282,18 @@ func (job Job) GeneratePayloads(logLevel string) error {
 }
 
 //ComputeEvent
-func (job Job) ComputeEvent(eventIndex int, logLevel string) error {
+func (job Job) ComputeEvent(eventIndex int) error {
 	for _, n := range job.Dag.LinkedManifests {
-		job.submitTask(n, eventIndex, logLevel)
+		job.submitTask(n, eventIndex)
 	}
-	if logLevel == "Info" {
-		fmt.Printf("computing event %v\n", eventIndex)
-	}
-
+	plugin.Logger.Log(plugin.Log{
+		Message: fmt.Sprintf("computing event %v\n", eventIndex),
+		Level:   plugin.INFO,
+	})
 	return nil
 }
 
-func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int, logLevel string) error {
+func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
@@ -280,14 +301,17 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int, logLeve
 	if err != nil {
 		return err
 	} else {
-		fmt.Println(dependencies)
+		plugin.Logger.Log(plugin.Log{
+			Message: fmt.Sprint(dependencies),
+			Level:   plugin.INFO,
+		})
 	}
 
 	payloadPath := job.generatePayloadPath(eventIndex, manifest)
-	if logLevel == "Info" {
-		fmt.Println(payloadPath)
-	}
-
+	plugin.Logger.Log(plugin.Log{
+		Message: payloadPath,
+		Level:   plugin.INFO,
+	})
 	//submit to batch.
 	//@TODO: replace with call to batch
 	batchJobArn := "Placeholder for Batch response"
