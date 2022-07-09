@@ -30,7 +30,15 @@ type GlobalLogger struct {
 	logger zerolog.Logger
 	Level  //i believe this will be global to the container each container having its own possible level (and wat having its own level too.)
 }
+type GlobalConfig struct {
+	HasInitialized bool
+	Config
+	stores map[string]filestore.FileStore
+}
 
+var PluginConfig = GlobalConfig{
+	HasInitialized: false,
+}
 var Logger = GlobalLogger{
 	Level: INFO,
 }
@@ -76,56 +84,51 @@ type ProgressReport struct {
 	Progress int8   `json:"progress"` //whole integers from 0 to 100...
 	Message  string `json:"message"`
 }
-type Services struct {
-	config Config
-	stores map[string]filestore.FileStore //should this be an array of file store? indexed by bucket name?
 
-	//sqs
-	//redis
-	//paul-bunyan
-
-}
-
-func InitServices(prefix string) (Services, error) {
+func initConfig() error {
 	var cfg Config
-	s := Services{}
-	if err := envconfig.Process(prefix, &cfg); err != nil {
-		return s, err
+	if err := envconfig.Process("", &cfg); err != nil {
+		return err
 	}
-	s.config = cfg
-	s.stores = make(map[string]filestore.FileStore)
-	_, err := s.getStore(cfg.S3_BUCKET)
-	if err != nil {
-		return s, err
-	}
-	return s, nil
+	PluginConfig.Config = cfg
+	PluginConfig.stores = make(map[string]filestore.FileStore)
+	return nil
 }
 
-func (s Services) EnvironmentVariables() []string {
-	return s.config.EnvironmentVariables()
+func EnvironmentVariables() []string {
+	return PluginConfig.EnvironmentVariables()
 }
-func (s Services) Config() Config {
-	return s.config
+func GetConfig() Config {
+	return PluginConfig.Config
 }
-func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
-	fs, ok := s.stores[bucketName]
+func getStore(bucketName string) (filestore.FileStore, error) {
+	fs, ok := PluginConfig.stores[bucketName]
 	if !ok {
+		//check if config exists.
+		if !PluginConfig.HasInitialized {
+			err := initConfig()
+			if err != nil {
+				Logger.Log(Log{
+					Message: "Could not Initialize Plugin Configurations, do you have an .env file",
+					Level:   FATAL,
+					Sender:  "Plugin Utilities",
+				})
+			}
+		}
 		//initalize S3 Store
-		mock := s.config.S3_MOCK
+		mock := PluginConfig.S3_MOCK
 		s3Conf := filestore.S3FSConfig{
-			S3Id:     s.config.AWS_ACCESS_KEY_ID,
-			S3Key:    s.config.AWS_SECRET_ACCESS_KEY,
-			S3Region: s.config.AWS_REGION,
-			S3Bucket: bucketName,
+			S3Id:     PluginConfig.AWS_ACCESS_KEY_ID,
+			S3Key:    PluginConfig.AWS_SECRET_ACCESS_KEY,
+			S3Region: PluginConfig.AWS_REGION,
+			S3Bucket: bucketName, //why would more than one bucket have the same keys?
 		}
 		if mock {
 			s3Conf.Mock = mock
-			s3Conf.S3DisableSSL = s.config.S3_DISABLE_SSL
-			s3Conf.S3ForcePathStyle = s.config.S3_FORCE_PATH_STYLE
-			s3Conf.S3Endpoint = s.config.S3_ENDPOINT
+			s3Conf.S3DisableSSL = PluginConfig.S3_DISABLE_SSL
+			s3Conf.S3ForcePathStyle = PluginConfig.S3_FORCE_PATH_STYLE
+			s3Conf.S3Endpoint = PluginConfig.S3_ENDPOINT
 		}
-		//fmt.Println(s3Conf)
-
 		nfs, err := filestore.NewFileStore(s3Conf)
 		fs = nfs
 		if err != nil {
@@ -136,16 +139,16 @@ func (s *Services) getStore(bucketName string) (filestore.FileStore, error) {
 			}
 			Logger.Log(log)
 		}
-		s.stores[bucketName] = fs
+		PluginConfig.stores[bucketName] = fs
 	}
 
 	return fs, nil
 }
-func (s Services) ReportProgress(report ProgressReport, linkedManifestId string) {
+func ReportProgress(report ProgressReport, linkedManifestId string) {
 	//can be placeholder.
 	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tProgress: %v, %v", linkedManifestId, report.Progress, report.Message))
 }
-func (s Services) ReportStatus(report StatusReport, linkedManifestId string) {
+func ReportStatus(report StatusReport, linkedManifestId string) {
 	//can be placeholder.
 	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tStatus: %v, %v", linkedManifestId, report.Status.String(), report.Message))
 }
@@ -210,14 +213,14 @@ func (logger GlobalLogger) Log(LogMessage Log) {
 		}
 	}
 }
-func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
+func LoadPayload(filepath string) (ModelPayload, error) {
 	Logger.Log(Log{
 		Message: fmt.Sprintf("reading:%v", filepath),
 		Level:   INFO,
 		Sender:  "Plugin Services",
 	})
 	payload := ModelPayload{}
-	fs, err := s.getStore(s.config.S3_BUCKET)
+	fs, err := getStore(PluginConfig.AWS_BUCKET)
 	if err != nil {
 		return payload, err
 	}
@@ -245,7 +248,7 @@ func (s *Services) LoadPayload(filepath string) (ModelPayload, error) {
 }
 
 // UpLoadFile
-func (s *Services) UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
+func UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 	if resource.Store != "S3" {
 		//check if local?
 		return errors.New("the resource is not defined as s3")
@@ -253,7 +256,7 @@ func (s *Services) UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 	if strings.Contains(resource.Path, "../") {
 		return errors.New("it is against policy to have relative paths for an s3 store")
 	}
-	fs, err := s.getStore(resource.Root)
+	fs, err := getStore(resource.Root) //how can we be sure we have the right secrets?
 	if err != nil {
 		return err
 	}
