@@ -1,34 +1,52 @@
 package plugin
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/USACE/filestore"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
 type Level uint8
 
 const (
-	INFO Level = iota + 1
+	DEBUG Level = iota
+	INFO
 	WARN
 	ERROR
-	DEBUG
 	FATAL
 	PANIC
 	DISABLED
 )
 
+func (l Level) String() string {
+	switch l {
+	case INFO:
+		return "some Information"
+	case WARN:
+		return "a Warning"
+	case ERROR:
+		return "an Error"
+	case DEBUG:
+		return "a Debug statement"
+	case FATAL:
+		return "a Fatal message"
+	case PANIC:
+		return "a Panic'ed state"
+	case DISABLED:
+		return ""
+	default:
+		return "Unknown Level"
+	}
+}
+
 type GlobalLogger struct {
-	logger zerolog.Logger
-	Level  //i believe this will be global to the container each container having its own possible level (and wat having its own level too.)
+	Level //i believe this will be global to the container each container having its own possible level (and wat having its own level too.)
 }
 type GlobalConfig struct {
 	HasInitialized bool
@@ -39,7 +57,7 @@ type GlobalConfig struct {
 var PluginConfig = GlobalConfig{
 	HasInitialized: false,
 }
-var Logger = GlobalLogger{
+var logger = GlobalLogger{
 	Level: INFO,
 }
 
@@ -49,12 +67,6 @@ type Log struct {
 	Sender  string `json:"sender"`
 }
 
-//zeroLog is a struct to parse the returned log from zerolog for the purpose of styling log outputs if SetStyle is used.
-type zeroLog struct {
-	Message string `json:"message"`
-	Level   string `json:"level"`
-	Sender  string `json:"sender"` //custom string feild
-}
 type Status uint8
 
 const (
@@ -108,7 +120,7 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 		if !PluginConfig.HasInitialized {
 			err := initConfig()
 			if err != nil {
-				Logger.Log(Log{
+				SubmitLog(Log{
 					Message: "Could not Initialize Plugin Configurations, do you have an .env file",
 					Level:   FATAL,
 					Sender:  "Plugin Utilities",
@@ -137,7 +149,7 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 				Level:   FATAL,
 				Sender:  "Plugin Services",
 			}
-			Logger.Log(log)
+			SubmitLog(log)
 		}
 		PluginConfig.stores[bucketName] = fs
 	}
@@ -146,75 +158,45 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 }
 func ReportProgress(report ProgressReport, linkedManifestId string) {
 	//can be placeholder.
-	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tProgress: %v, %v", linkedManifestId, report.Progress, report.Message))
+	log := Log{
+		Message: fmt.Sprintf("Manifest: %v\n\tProgress: %v, %v", linkedManifestId, report.Progress, report.Message),
+		Level:   INFO,
+		Sender:  "Progress Reporter",
+	}
+	logger.write(log)
 }
 func ReportStatus(report StatusReport, linkedManifestId string) {
 	//can be placeholder.
-	log.Info().Msg(fmt.Sprintf("Manifest: %v\n\tStatus: %v, %v", linkedManifestId, report.Status.String(), report.Message))
-}
-
-type logWriter struct {
-}
-
-func (w logWriter) Write(b []byte) (n int, err error) {
-	log := zeroLog{}
-	errjson := json.Unmarshal(b, &log)
-	if errjson != nil {
-		return 1, errjson
+	log := Log{
+		Message: fmt.Sprintf("Manifest: %v\n\tStatus: %v, %v", linkedManifestId, report.Status.String(), report.Message),
+		Level:   INFO,
+		Sender:  "Status Reporter",
 	}
-	fmt.Printf("%v issues %v\n\t%v\n", log.Sender, log.Level, log.Message)
+	logger.write(log)
+}
+
+func (l GlobalLogger) write(log Log) (n int, err error) {
+	sender := ""
+	if log.Sender == "" {
+		sender = "Unknown Sender"
+	} else {
+		sender = log.Sender
+	}
+	fmt.Printf("%v issues %v\n\t%v\n", sender, log.Level.String(), log.Message)
 	return 0, nil
 }
-func (logger *GlobalLogger) SetStyle() {
-	w := logWriter{}
-	logger.logger = zerolog.New(w)
-}
-func (logger *GlobalLogger) SetLogLevel(logLevel Level) {
-	switch logLevel {
-	case DEBUG:
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	case INFO:
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	case WARN:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	case ERROR:
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	case FATAL:
-		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	case PANIC:
-		zerolog.SetGlobalLevel(zerolog.FatalLevel)
-	case DISABLED:
-		zerolog.SetGlobalLevel(zerolog.Disabled)
-	default:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	}
+
+func SetLogLevel(logLevel Level) {
 	logger.Level = logLevel
 }
-func (logger GlobalLogger) Log(LogMessage Log) {
+func SubmitLog(LogMessage Log) {
 	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
 	if logger.Level <= LogMessage.Level {
-		switch LogMessage.Level {
-		case DEBUG:
-			logger.logger.Debug().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case INFO:
-			logger.logger.Info().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case WARN:
-			logger.logger.Warn().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case ERROR:
-			logger.logger.Error().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case FATAL:
-			logger.logger.Fatal().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case PANIC:
-			logger.logger.Panic().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		case DISABLED:
-			//log.Info().Msg(message)
-		default:
-			logger.logger.Info().Str("sender", LogMessage.Sender).Msg(LogMessage.Message)
-		}
+		logger.write(LogMessage)
 	}
 }
 func LoadPayload(filepath string) (ModelPayload, error) {
-	Logger.Log(Log{
+	SubmitLog(Log{
 		Message: fmt.Sprintf("reading:%v", filepath),
 		Level:   INFO,
 		Sender:  "Plugin Services",
@@ -236,7 +218,7 @@ func LoadPayload(filepath string) (ModelPayload, error) {
 
 	err = yaml.Unmarshal(body, &payload)
 	if err != nil {
-		Logger.Log(Log{
+		SubmitLog(Log{
 			Message: fmt.Sprintf("error reading:%v", filepath),
 			Level:   ERROR,
 			Sender:  "Plugin Services",
@@ -245,6 +227,62 @@ func LoadPayload(filepath string) (ModelPayload, error) {
 	}
 
 	return payload, nil
+}
+func FetchPayloadInputs(payload ModelPayload, localRoot string) error {
+	for _, fileData := range payload.Inputs {
+		bytes, err := DownloadObject(fileData.ResourceInfo)
+		if err != nil {
+			return err
+		}
+		//write bytes.
+		writeBytes(bytes, localRoot, fileData.ResourceInfo.Path)
+		//check for other files?
+		if len(fileData.InternalPaths) > 0 {
+			for _, internalPath := range fileData.InternalPaths {
+				bytes, err := DownloadObject(internalPath.ResourceInfo)
+				if err != nil {
+					return err
+				}
+				writeBytes(bytes, localRoot, internalPath.ResourceInfo.Path)
+			}
+		}
+	}
+	return nil
+}
+func writeBytes(b []byte, destinationRoot string, destinationPath string) error {
+	if _, err := os.Stat(destinationRoot); os.IsNotExist(err) {
+		os.MkdirAll(destinationRoot, 0644) //do i need to trim filename?
+	}
+	err := os.WriteFile(destinationPath, b, 0644)
+	if err != nil {
+		SubmitLog(Log{
+			Message: fmt.Sprintf("failure to write local file: %v\n\terror:%v", destinationPath, err),
+			Level:   ERROR,
+			Sender:  "Plugin Utilities",
+		})
+		return err
+	}
+	return nil
+}
+func DownloadObject(resource ResourceInfo) ([]byte, error) {
+	SubmitLog(Log{
+		Message: fmt.Sprintf("reading:%v", resource.Path),
+		Level:   INFO,
+		Sender:  "Plugin Services",
+	})
+	fs, err := getStore(resource.Root)
+	if err != nil {
+		return nil, err
+	}
+	data, err := fs.GetObject(resource.Path)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(data)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 // UpLoadFile

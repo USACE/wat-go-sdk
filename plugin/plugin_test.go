@@ -106,18 +106,17 @@ func TestWritePayload(t *testing.T) {
 }
 
 func TestWriteLog(t *testing.T) {
-	plugin.Logger.SetLogLevel(plugin.WARN)
-	plugin.Logger.SetStyle()
-	plugin.Logger.Log(plugin.Log{
+	plugin.SetLogLevel(plugin.WARN)
+	plugin.SubmitLog(plugin.Log{
 		Message: "ERROR",
 		Level:   plugin.ERROR,
 	})
-	plugin.Logger.Log(plugin.Log{
+	plugin.SubmitLog(plugin.Log{
 		Message: "WARNING",
 		Level:   plugin.WARN,
 		Sender:  "testing",
 	})
-	plugin.Logger.Log(plugin.Log{
+	plugin.SubmitLog(plugin.Log{
 		Message: "INFO",
 		Level:   plugin.INFO,
 	})
