@@ -92,10 +92,12 @@ func (s Status) String() string {
 type StatusReport struct {
 	Status  Status `json:"status"`
 	Message string `json:"message"`
+	Sender  string `json:"sender"`
 }
 type ProgressReport struct {
 	Progress int8   `json:"progress"` //whole integers from 0 to 100...
 	Message  string `json:"message"`
+	Sender   string `json:"sender"`
 }
 
 func initConfig() error {
@@ -157,19 +159,19 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 
 	return fs, nil
 }
-func ReportProgress(report ProgressReport, linkedManifestId string) {
+func ReportProgress(report ProgressReport) {
 	//can be placeholder.
 	log := Log{
-		Message: fmt.Sprintf("Manifest: %v\n\tProgress: %v, %v", linkedManifestId, report.Progress, report.Message),
+		Message: fmt.Sprintf("Sender: %v\n\tProgress: %v, %v", report.Sender, report.Progress, report.Message),
 		Level:   INFO,
 		Sender:  "Progress Reporter",
 	}
 	logger.write(log)
 }
-func ReportStatus(report StatusReport, linkedManifestId string) {
+func ReportStatus(report StatusReport) {
 	//can be placeholder.
 	log := Log{
-		Message: fmt.Sprintf("Manifest: %v\n\tStatus: %v, %v", linkedManifestId, report.Status.String(), report.Message),
+		Message: fmt.Sprintf("Sender: %v\n\tStatus: %v, %v", report.Sender, report.Status.String(), report.Message),
 		Level:   INFO,
 		Sender:  "Status Reporter",
 	}
