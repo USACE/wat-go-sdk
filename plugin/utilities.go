@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/USACE/filestore"
@@ -289,7 +290,23 @@ func DownloadObject(resource ResourceInfo) ([]byte, error) {
 func UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 	if resource.Store != "S3" {
 		//check if local?
-		return errors.New("the resource is not defined as s3")
+		if resource.Store != "Local" {
+			return errors.New("the resource is not defined as S3 or Local")
+		}
+
+		if _, err := os.Stat(resource.Path); os.IsNotExist(err) {
+			rootDir := filepath.Dir(resource.Path)
+			os.MkdirAll(rootDir, 0644)
+		}
+		err := os.WriteFile(resource.Path, fileBytes, 0644)
+		if err != nil {
+			SubmitLog(Log{
+				Message: err.Error(),
+				Level:   ERROR,
+				Sender:  "Plugin Utilities",
+			})
+			return err
+		}
 	}
 	if strings.Contains(resource.Path, "../") {
 		return errors.New("it is against policy to have relative paths for an s3 store")

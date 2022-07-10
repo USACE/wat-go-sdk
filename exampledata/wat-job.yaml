@@ -86,6 +86,6 @@ required_resources:
   - linked_manifest_id: 437741a5-8f4d-4206-872d-0564153501cc
     compute_environment: defaultstringtobereplacedlater
 output_destination:
-  store: s3
-  root: cloud-wat-dev
+  store: Local
+  root: ../exampledata
   path: ../exampledata/runs/

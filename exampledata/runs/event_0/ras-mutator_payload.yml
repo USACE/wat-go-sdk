@@ -11,14 +11,14 @@ inputs:
         - pathname: /Event Conditions/15696.24
           filename: hsm1.csv
           resource_info:
-            store: s3
-            root: cloud-wat-dev
+            store: Local
+            root: ../exampledata
             path: ../exampledata/runs/event_0/hsm1.csv
         - pathname: /Event Conditions/789563.89
           filename: hsm2.csv
           resource_info:
-            store: s3
-            root: cloud-wat-dev
+            store: Local
+            root: ../exampledata
             path: ../exampledata/runs/event_0/hsm2.csv
     - id: cb950b3f-e4ff-4109-936c-5991ad42fb45
       filename: Muncie.b04
@@ -30,24 +30,24 @@ inputs:
         - pathname: BreachLocationA
           filename: fc1.csv
           resource_info:
-            store: s3
-            root: cloud-wat-dev
+            store: Local
+            root: ../exampledata
             path: ../exampledata/runs/event_0/fc1.csv
         - pathname: Boundary4
           filename: hsm3.dss
           internal_path: /a/b/c/d/e/f/
           resource_info:
-            store: s3
-            root: cloud-wat-dev
+            store: Local
+            root: ../exampledata
             path: ../exampledata/runs/event_0/hsm3.dss
 outputs:
     - filename: Muncie.p04.tmp.hdf
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/Muncie.p04.tmp.hdf
     - filename: Muncie.b04
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/Muncie.b04

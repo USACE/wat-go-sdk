@@ -253,21 +253,16 @@ func payloadWriter(payload plugin.ModelPayload, job Job, eventIndex int, modelMa
 	if err != nil {
 		return err
 	}
-
-	// fmt.Println("")
-	// fmt.Println(string(bytes))
-
 	// put payload in s3
-	outputDestinationPath := job.eventLevelOutputDirectory(eventIndex)
 	path := job.generatePayloadPath(eventIndex, modelManifest)
 
-	// fmt.Println("putting object in fs:", path)
-	//_, err = fs.PutObject(path, bytes) //@TODO: replace with FileStore.
-	if _, err = os.Stat(path); os.IsNotExist(err) {
-		os.MkdirAll(outputDestinationPath, 0644)
+	outputResourceInfo := plugin.ResourceInfo{
+		Store: job.OutputDestination.Store,
+		Root:  job.OutputDestination.Root,
+		Path:  path,
 	}
+	plugin.UpLoadFile(outputResourceInfo, bytes)
 
-	err = os.WriteFile(path, bytes, 0644)
 	if err != nil {
 		plugin.SubmitLog(plugin.Log{
 			Message: fmt.Sprintf("failure to push payload to filestore: %v\n", err),
