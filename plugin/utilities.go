@@ -229,14 +229,14 @@ func LoadPayload(filepath string) (ModelPayload, error) {
 
 	return payload, nil
 }
-func FetchPayloadInputs(payload ModelPayload, localRoot string) error {
+func CopyPayloadInputsLocally(payload ModelPayload, localRoot string) error {
 	for _, fileData := range payload.Inputs {
 		bytes, err := DownloadObject(fileData.ResourceInfo)
 		if err != nil {
 			return err
 		}
 		//write bytes.
-		writeBytes(bytes, localRoot, fileData.ResourceInfo.Path)
+		writeLocalBytes(bytes, localRoot, fileData.ResourceInfo.Path)
 		//check for other files?
 		if len(fileData.InternalPaths) > 0 {
 			for _, internalPath := range fileData.InternalPaths {
@@ -244,13 +244,13 @@ func FetchPayloadInputs(payload ModelPayload, localRoot string) error {
 				if err != nil {
 					return err
 				}
-				writeBytes(bytes, localRoot, internalPath.ResourceInfo.Path)
+				writeLocalBytes(bytes, localRoot, internalPath.ResourceInfo.Path)
 			}
 		}
 	}
 	return nil
 }
-func writeBytes(b []byte, destinationRoot string, destinationPath string) error {
+func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) error {
 	if _, err := os.Stat(destinationRoot); os.IsNotExist(err) {
 		os.MkdirAll(destinationRoot, 0644) //do i need to trim filename?
 	}
@@ -266,34 +266,68 @@ func writeBytes(b []byte, destinationRoot string, destinationPath string) error 
 	return nil
 }
 func DownloadObject(resource ResourceInfo) ([]byte, error) {
-	SubmitLog(Log{
-		Message: fmt.Sprintf("reading:%v", resource.Path),
-		Level:   INFO,
-		Sender:  "Plugin Services",
-	})
-	fs, err := getStore(resource.Root)
-	if err != nil {
-		return nil, err
+	switch resource.Store {
+	case S3:
+		SubmitLog(Log{
+			Message: fmt.Sprintf("reading from S3:%v", resource.Path),
+			Level:   INFO,
+			Sender:  "Plugin Services",
+		})
+		fs, err := getStore(resource.Root)
+		if err != nil {
+			return nil, err
+		}
+		data, err := fs.GetObject(resource.Path)
+		if err != nil {
+			return nil, err
+		}
+		body, err := ioutil.ReadAll(data)
+		if err != nil {
+			return nil, err
+		}
+		return body, nil
+	case LOCAL:
+		SubmitLog(Log{
+			Message: fmt.Sprintf("reading from S3:%v", resource.Path),
+			Level:   INFO,
+			Sender:  "Plugin Services",
+		})
+		file, err := os.Open(resource.Path)
+		if err != nil {
+			return nil, err
+		}
+		bytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
+	default:
+		SubmitLog(Log{
+			Message: fmt.Sprintf("requested read from unknown store:%v", resource.Store),
+			Level:   WARN,
+			Sender:  "Plugin Services",
+		})
+		return nil, errors.New("punting non S3 download")
 	}
-	data, err := fs.GetObject(resource.Path)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ioutil.ReadAll(data)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
 }
 
 // UpLoadFile
 func UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
-	if resource.Store != "S3" {
-		//check if local?
-		if resource.Store != "Local" {
-			return errors.New("the resource is not defined as S3 or Local")
+	switch resource.Store {
+	case S3:
+		if strings.Contains(resource.Path, "../") {
+			return errors.New("it is against policy to have relative paths for an s3 store")
 		}
-
+		fs, err := getStore(resource.Root) //how can we be sure we have the right secrets?
+		if err != nil {
+			return err
+		}
+		_, err = fs.PutObject(resource.Path, fileBytes)
+		if err != nil {
+			return err
+		}
+		return err
+	case LOCAL:
 		if _, err := os.Stat(resource.Path); os.IsNotExist(err) {
 			rootDir := filepath.Dir(resource.Path)
 			os.MkdirAll(rootDir, 0644)
@@ -307,18 +341,8 @@ func UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 			})
 			return err
 		}
+		return nil
+	default:
+		return errors.New("the resource is not defined as S3 or Local")
 	}
-	if strings.Contains(resource.Path, "../") {
-		return errors.New("it is against policy to have relative paths for an s3 store")
-	}
-	fs, err := getStore(resource.Root) //how can we be sure we have the right secrets?
-	if err != nil {
-		return err
-	}
-	_, err = fs.PutObject(resource.Path, fileBytes)
-	if err != nil {
-		return err
-	}
-
-	return err
 }
