@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/USACE/filestore"
-	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
 )
 
@@ -79,21 +79,71 @@ type Message struct {
 	PayloadId string `json:"payload_id"`
 }
 
-func initConfig() error {
-	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		return err
-	}
+func InitConfig(cfg Config) error {
 	PluginConfig.Config = cfg
 	PluginConfig.stores = make(map[string]filestore.FileStore)
+	//get all filestores set up.
+	for _, acfg := range cfg.AwsConfigs {
+		fs, err := initStore(acfg)
+		if err != nil {
+			return err
+		}
+		PluginConfig.stores[acfg.AWS_BUCKET] = fs
+	}
+	PluginConfig.HasInitialized = true
 	return nil
 }
-
-func EnvironmentVariables() []string {
-	return PluginConfig.EnvironmentVariables()
+func readConfig(path string) (Config, error) {
+	var cfg Config
+	file, err := os.Open(path)
+	if err != nil {
+		return cfg, err
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return cfg, err
+	}
+	err = json.Unmarshal(bytes, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+	return cfg, nil
+}
+func initConfig() error {
+	//try to load from local directory as .json or .env file?
+	cfg, err := readConfig("config.json")
+	if err != nil {
+		return err
+	}
+	return InitConfig(cfg)
 }
 func GetConfig() Config {
 	return PluginConfig.Config
+}
+func initStore(cfg AwsConfig) (filestore.FileStore, error) {
+	mock := cfg.S3_MOCK
+	s3Conf := filestore.S3FSConfig{
+		S3Id:     cfg.AWS_ACCESS_KEY_ID,
+		S3Key:    cfg.AWS_SECRET_ACCESS_KEY,
+		S3Region: cfg.AWS_REGION,
+		S3Bucket: cfg.AWS_BUCKET,
+	}
+	if mock {
+		s3Conf.Mock = mock
+		s3Conf.S3DisableSSL = cfg.S3_DISABLE_SSL
+		s3Conf.S3ForcePathStyle = cfg.S3_FORCE_PATH_STYLE
+		s3Conf.S3Endpoint = cfg.S3_ENDPOINT
+	}
+	fs, err := filestore.NewFileStore(s3Conf)
+	if err != nil {
+		log := Message{
+			Message: err.Error(),
+			Level:   FATAL,
+			Sender:  "Plugin Services",
+		}
+		Log(log)
+	}
+	return fs, err
 }
 func getStore(bucketName string) (filestore.FileStore, error) {
 	fs, ok := PluginConfig.stores[bucketName]
@@ -103,39 +153,40 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 			err := initConfig()
 			if err != nil {
 				Log(Message{
-					Message: "Could not Initialize Plugin Configurations, do you have an .env file",
+					Message: "attempts to auto initialize plugin configurations failed. Either intialize with config (e.g. plugin.InitServices(config)) or place a config.json file that meets the spec in the present working directory.",
 					Level:   FATAL,
 					Sender:  "Plugin Utilities",
 				})
 			}
 		}
-		//initalize S3 Store
-		mock := PluginConfig.S3_MOCK
-		s3Conf := filestore.S3FSConfig{
-			S3Id:     PluginConfig.AWS_ACCESS_KEY_ID,
-			S3Key:    PluginConfig.AWS_SECRET_ACCESS_KEY,
-			S3Region: PluginConfig.AWS_REGION,
-			S3Bucket: bucketName, //why would more than one bucket have the same keys?
-		}
-		if mock {
-			s3Conf.Mock = mock
-			s3Conf.S3DisableSSL = PluginConfig.S3_DISABLE_SSL
-			s3Conf.S3ForcePathStyle = PluginConfig.S3_FORCE_PATH_STYLE
-			s3Conf.S3Endpoint = PluginConfig.S3_ENDPOINT
-		}
-		nfs, err := filestore.NewFileStore(s3Conf)
-		fs = nfs
-		if err != nil {
-			log := Message{
-				Message: err.Error(),
-				Level:   FATAL,
-				Sender:  "Plugin Services",
+		bucketExists := false
+		for _, cfg := range PluginConfig.AwsConfigs {
+			if cfg.AWS_BUCKET == bucketName {
+				nfs, err := initStore(cfg)
+				if err != nil {
+					log := Message{
+						Message: err.Error(),
+						Level:   FATAL,
+						Sender:  "Plugin Services",
+					}
+					Log(log)
+				}
+				fs = nfs
+				PluginConfig.stores[bucketName] = nfs
+				bucketExists = true
+				break
 			}
-			Log(log)
 		}
-		PluginConfig.stores[bucketName] = fs
+		if !bucketExists {
+			message := fmt.Sprintf("The bucket requested (bucketname: %v) was not found", bucketName)
+			Log(Message{
+				Level:   FATAL,
+				Message: message,
+				Sender:  "Plugin Utilities",
+			})
+			return fs, errors.New(message)
+		}
 	}
-
 	return fs, nil
 }
 
@@ -165,7 +216,11 @@ func LoadPayload(filepath string) (ModelPayload, error) {
 		Sender:  "Plugin Services",
 	})
 	payload := ModelPayload{}
-	fs, err := getStore(PluginConfig.AWS_BUCKET)
+	config, err := PluginConfig.PrimaryConfig()
+	if err != nil {
+		return payload, err
+	}
+	fs, err := getStore(config.AWS_BUCKET)
 	if err != nil {
 		return payload, err
 	}

@@ -1,29 +1,36 @@
 package plugin
 
-import (
-	"fmt"
+import "errors"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/batch"
-)
-
+type AwsConfig struct {
+	Name                  string `json:"aws_config_name"`
+	IsPrimary             bool   `json:"is_primary_config"` //where payloads would get stored?
+	AWS_ACCESS_KEY_ID     string `json:"aws_access_key_id"`
+	AWS_SECRET_ACCESS_KEY string `json:"aws_secret_access_key_id"`
+	AWS_REGION            string `json:"aws_region"`
+	AWS_BUCKET            string `json:"aws_bucket"`
+	S3_MOCK               bool   `json:"aws_mock"`             //for testing with minio
+	S3_ENDPOINT           string `json:"aws_endpoint"`         //for testing with minio
+	S3_DISABLE_SSL        bool   `json:"aws_disable_ssl"`      //for testing with minio
+	S3_FORCE_PATH_STYLE   bool   `json:"aws_force_path_style"` //for testing with minio
+}
 type Config struct {
-	AWS_ACCESS_KEY_ID     string
-	AWS_SECRET_ACCESS_KEY string
-	AWS_REGION            string
-	AWS_BUCKET            string
-	S3_MOCK               bool   //for testing with minio
-	S3_ENDPOINT           string //for testing with minio
-	S3_DISABLE_SSL        bool   //for testing with minio
-	S3_FORCE_PATH_STYLE   bool   //for testing with minio
-	//REDIS_HOST            string
-	//REDIS_PORT            string
-	//REDIS_PASSWORD        string
-	//SQS_ENDPOINT          string
-	//LogLevel?
+	AwsConfigs []AwsConfig `json:"aws_configs"`
 }
 
-func (c Config) EnvironmentVariables() []string {
+func (c Config) PrimaryConfig() (AwsConfig, error) {
+
+	for _, ac := range c.AwsConfigs {
+		if ac.IsPrimary {
+			return ac, nil
+		}
+	}
+	nilconfig := AwsConfig{}
+	return nilconfig, errors.New("No config was marked as primary.")
+}
+
+/*
+func (c AwsConfig) EnvironmentVariables() []string {
 	ret := make([]string, 7)
 	ret[0] = "AWS_ACCESS_KEY_ID=" + c.AWS_ACCESS_KEY_ID
 	ret[1] = "AWS_SECRET_ACCESS_KEY=" + c.AWS_SECRET_ACCESS_KEY
@@ -47,7 +54,7 @@ func toBatchKeyValuePair(key string, value string) *batch.KeyValuePair {
 }
 
 //this is realy useful in WAT (but maybe not in plugin.utilities)
-func (c Config) BatchEnvironmentVariables() []*batch.KeyValuePair {
+func (c AwsConfig) BatchEnvironmentVariables() []*batch.KeyValuePair {
 	ret := make([]*batch.KeyValuePair, 7)
 	ret[0] = toBatchKeyValuePair("AWS_ACCESS_KEY_ID", c.AWS_ACCESS_KEY_ID)
 	ret[1] = toBatchKeyValuePair("AWS_SECRET_ACCESS_KEY", c.AWS_SECRET_ACCESS_KEY)
@@ -62,3 +69,4 @@ func (c Config) BatchEnvironmentVariables() []*batch.KeyValuePair {
 	//ret[12] = toBatchKeyValuePair("SQS_ENDPOINT", c.SQS_ENDPOINT)
 	return ret
 }
+*/
