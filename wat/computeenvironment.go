@@ -6,3 +6,11 @@ type ComputeResourceRequirements struct {
 	//QUEUE string `json:"job_queue" yaml:"job_queue"`
 	//JobDefinition string `json:"job_definition" yaml:"job_definition"`
 }
+
+//from seth's implementation
+type AWSBatchPayload struct {
+	ComputeEnvironmentFile string `json:"computeEnvironmentFile"`
+	JobDefinitionFile      string `json:"jobDefinitionFile"`
+	JobQueueFile           string `json:"jobQueueFile"`
+	NewJob                 string `json:"newJob"` //not sure why we need this atm.
+}
