@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/USACE/filestore"
 	"gopkg.in/yaml.v3"
@@ -77,6 +78,7 @@ type Message struct {
 	Message   string `json:"message"`
 	Sender    string `json:"sender,omitempty"`
 	PayloadId string `json:"payload_id"`
+	timeStamp time.Time
 }
 
 func InitConfig(cfg Config) error {
@@ -191,13 +193,14 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 }
 
 func (l GlobalLogger) write(log Message) (n int, err error) {
+	log.timeStamp = time.Now()
 	sender := ""
 	if log.Sender == "" {
 		sender = "Unknown Sender"
 	} else {
 		sender = log.Sender
 	}
-	fmt.Printf("%v issues %v\n\t%v\n", sender, log.Level.String(), log.Message)
+	fmt.Printf("%v issues %v at %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, log.Message)
 	return 0, nil
 }
 
