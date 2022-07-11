@@ -271,7 +271,7 @@ func (dag DirectedAcyclicGraph) linkToModelData(linkedFile LinkedFileData, event
 		returnFile.FileName = file.FileName
 		returnFile.ResourceInfo = file.ResourceInfo
 
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: fmt.Sprintf("\t\t%v | internal paths = %v\n", linkedFile.SourceDataId, len(linkedFile.InternalPaths)),
 			Level:   plugin.INFO,
 			Sender:  "DAG Linking",

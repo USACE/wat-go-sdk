@@ -106,17 +106,18 @@ func TestWritePayload(t *testing.T) {
 }
 
 func TestWriteLog(t *testing.T) {
+	//log no progress or status.
 	plugin.SetLogLevel(plugin.WARN)
-	plugin.SubmitLog(plugin.Log{
+	plugin.Log(plugin.Message{
 		Message: "ERROR",
 		Level:   plugin.ERROR,
 	})
-	plugin.SubmitLog(plugin.Log{
+	plugin.Log(plugin.Message{
 		Message: "WARNING",
 		Level:   plugin.WARN,
 		Sender:  "testing",
 	})
-	plugin.SubmitLog(plugin.Log{
+	plugin.Log(plugin.Message{
 		Message: "INFO",
 		Level:   plugin.INFO,
 	})

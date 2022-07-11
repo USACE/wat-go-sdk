@@ -34,7 +34,7 @@ func TestComputePayloads(t *testing.T) {
 	//construct a job manager
 	jobManager, err := wat.Init(jobManifest)
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -44,7 +44,7 @@ func TestComputePayloads(t *testing.T) {
 	// validate -
 	err = jobManager.Validate()
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -54,7 +54,7 @@ func TestComputePayloads(t *testing.T) {
 	//compute...
 	err = jobManager.ProcessJob()
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -64,7 +64,7 @@ func TestComputePayloads(t *testing.T) {
 	pathOutput := "../exampledata/runs/event_0/ras-mutator_payload.yml"
 	outputFile, err := os.Open(pathOutput)
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -73,7 +73,7 @@ func TestComputePayloads(t *testing.T) {
 
 	outputBytes, err := ioutil.ReadAll(outputFile)
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -83,7 +83,7 @@ func TestComputePayloads(t *testing.T) {
 	pathComparison := "../exampledata/ras-mutator_payload.yml"
 	comparisonFile, err := os.Open(pathComparison)
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -92,7 +92,7 @@ func TestComputePayloads(t *testing.T) {
 
 	comparisonBytes, err := ioutil.ReadAll(comparisonFile)
 	if err != nil {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
@@ -122,32 +122,32 @@ func readObject(t *testing.T, path string, object interface{}) {
 
 	if err != nil {
 		//log.Println(err)
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: err.Error(),
 			Level:   plugin.ERROR,
 		})
 		t.Fail()
 	} else {
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: string(b),
 			Level:   plugin.INFO,
 		})
 		newTestLine := "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: newTestLine,
 			Level:   plugin.INFO,
 		})
 
 		b2, err := yaml.Marshal(object)
 		if err != nil {
-			plugin.SubmitLog(plugin.Log{
+			plugin.Log(plugin.Message{
 				Message: err.Error(),
 				Level:   plugin.ERROR,
 			})
 			t.Fail()
 		}
 
-		plugin.SubmitLog(plugin.Log{
+		plugin.Log(plugin.Message{
 			Message: string(b2),
 			Level:   plugin.INFO,
 		})

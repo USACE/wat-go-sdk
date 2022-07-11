@@ -62,42 +62,21 @@ var logger = GlobalLogger{
 	Level: INFO,
 }
 
-type Log struct {
-	Message string `json:"message"`
-	Level   Level  `json:"loglevel"`
-	Sender  string `json:"sender"`
-}
-
-type Status uint8
+type Status string
 
 const (
-	COMPUTING Status = iota
-	FAILED
-	SUCCEEDED
+	COMPUTING Status = "Computing"
+	FAILED    Status = "Failed"
+	SUCCEEDED Status = "Succeeded"
 )
 
-func (s Status) String() string {
-	switch s {
-	case COMPUTING:
-		return "Computing"
-	case FAILED:
-		return "Failed"
-	case SUCCEEDED:
-		return "Succeeded"
-	default:
-		return "Unknown Status"
-	}
-}
-
-type StatusReport struct {
-	Status  Status `json:"status"`
-	Message string `json:"message"`
-	Sender  string `json:"sender"`
-}
-type ProgressReport struct {
-	Progress int8   `json:"progress"` //whole integers from 0 to 100...
-	Message  string `json:"message"`
-	Sender   string `json:"sender"`
+type Message struct {
+	Status    Status `json:"status,omitempty"`
+	Progress  int8   `json:"progress,omitempty"`
+	Level     Level  `json:"level"`
+	Message   string `json:"message"`
+	Sender    string `json:"sender,omitempty"`
+	PayloadId string `json:"payload_id"`
 }
 
 func initConfig() error {
@@ -123,7 +102,7 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 		if !PluginConfig.HasInitialized {
 			err := initConfig()
 			if err != nil {
-				SubmitLog(Log{
+				Log(Message{
 					Message: "Could not Initialize Plugin Configurations, do you have an .env file",
 					Level:   FATAL,
 					Sender:  "Plugin Utilities",
@@ -147,38 +126,20 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 		nfs, err := filestore.NewFileStore(s3Conf)
 		fs = nfs
 		if err != nil {
-			log := Log{
+			log := Message{
 				Message: err.Error(),
 				Level:   FATAL,
 				Sender:  "Plugin Services",
 			}
-			SubmitLog(log)
+			Log(log)
 		}
 		PluginConfig.stores[bucketName] = fs
 	}
 
 	return fs, nil
 }
-func ReportProgress(report ProgressReport) {
-	//can be placeholder.
-	log := Log{
-		Message: fmt.Sprintf("Sender: %v\n\tProgress: %v, %v", report.Sender, report.Progress, report.Message),
-		Level:   INFO,
-		Sender:  "Progress Reporter",
-	}
-	logger.write(log)
-}
-func ReportStatus(report StatusReport) {
-	//can be placeholder.
-	log := Log{
-		Message: fmt.Sprintf("Sender: %v\n\tStatus: %v, %v", report.Sender, report.Status.String(), report.Message),
-		Level:   INFO,
-		Sender:  "Status Reporter",
-	}
-	logger.write(log)
-}
 
-func (l GlobalLogger) write(log Log) (n int, err error) {
+func (l GlobalLogger) write(log Message) (n int, err error) {
 	sender := ""
 	if log.Sender == "" {
 		sender = "Unknown Sender"
@@ -192,14 +153,13 @@ func (l GlobalLogger) write(log Log) (n int, err error) {
 func SetLogLevel(logLevel Level) {
 	logger.Level = logLevel
 }
-func SubmitLog(LogMessage Log) {
-	//using zerolog is a placeholder, could use SQS or Redis or whatever we want.
-	if logger.Level <= LogMessage.Level {
-		logger.write(LogMessage)
+func Log(message Message) {
+	if logger.Level <= message.Level {
+		logger.write(message)
 	}
 }
 func LoadPayload(filepath string) (ModelPayload, error) {
-	SubmitLog(Log{
+	Log(Message{
 		Message: fmt.Sprintf("reading:%v", filepath),
 		Level:   INFO,
 		Sender:  "Plugin Services",
@@ -221,7 +181,7 @@ func LoadPayload(filepath string) (ModelPayload, error) {
 
 	err = yaml.Unmarshal(body, &payload)
 	if err != nil {
-		SubmitLog(Log{
+		Log(Message{
 			Message: fmt.Sprintf("error reading:%v", filepath),
 			Level:   ERROR,
 			Sender:  "Plugin Services",
@@ -258,7 +218,7 @@ func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) e
 	}
 	err := os.WriteFile(destinationPath, b, 0644)
 	if err != nil {
-		SubmitLog(Log{
+		Log(Message{
 			Message: fmt.Sprintf("failure to write local file: %v\n\terror:%v", destinationPath, err),
 			Level:   ERROR,
 			Sender:  "Plugin Utilities",
@@ -270,7 +230,7 @@ func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) e
 func DownloadObject(resource ResourceInfo) ([]byte, error) {
 	switch resource.Store {
 	case S3:
-		SubmitLog(Log{
+		Log(Message{
 			Message: fmt.Sprintf("reading from S3:%v", resource.Path),
 			Level:   INFO,
 			Sender:  "Plugin Services",
@@ -289,7 +249,7 @@ func DownloadObject(resource ResourceInfo) ([]byte, error) {
 		}
 		return body, nil
 	case LOCAL:
-		SubmitLog(Log{
+		Log(Message{
 			Message: fmt.Sprintf("reading from S3:%v", resource.Path),
 			Level:   INFO,
 			Sender:  "Plugin Services",
@@ -304,7 +264,7 @@ func DownloadObject(resource ResourceInfo) ([]byte, error) {
 		}
 		return bytes, nil
 	default:
-		SubmitLog(Log{
+		Log(Message{
 			Message: fmt.Sprintf("requested read from unknown store:%v", resource.Store),
 			Level:   WARN,
 			Sender:  "Plugin Services",
@@ -336,7 +296,7 @@ func UpLoadFile(resource ResourceInfo, fileBytes []byte) error {
 		}
 		err := os.WriteFile(resource.Path, fileBytes, 0644)
 		if err != nil {
-			SubmitLog(Log{
+			Log(Message{
 				Message: err.Error(),
 				Level:   ERROR,
 				Sender:  "Plugin Utilities",
