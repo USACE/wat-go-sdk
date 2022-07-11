@@ -3,8 +3,8 @@ event_index: 0
 inputs:
     - filename: event_configuration.json
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/event_configuration.json
     - id: 4a04b3f9-2413-4143-865a-769a9432c33f
       filename: hsm.json
@@ -15,16 +15,16 @@ inputs:
 outputs:
     - filename: hsm1.csv
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/hsm1.csv
     - filename: hsm2.csv
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/hsm2.csv
     - filename: hsm3.dss
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/hsm3.dss

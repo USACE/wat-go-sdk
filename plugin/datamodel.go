@@ -13,10 +13,17 @@ type ModelIdentifier struct {
 	Alternative string              `json:"alternative,omitempty" yaml:"alternative,omitempty"`
 	Files       []ResourcedFileData `json:"files,omitempty" yaml:"files,omitempty"`
 }
+type Store string
+
+const (
+	S3    Store = "S3"
+	LOCAL Store = "Local"
+	//others?
+)
 
 //ResourceInfo defines the elements to resolve to a file object, what store it uses, the root (or bucket) and then the path to the asset.
 type ResourceInfo struct {
-	Store string `json:"store" yaml:"store"`                   // s3, azure, local, queue?
+	Store Store  `json:"store" yaml:"store"`                   // s3, azure, local, queue?
 	Root  string `json:"root" yaml:"root"`                     // bucket, rootdir, queue?
 	Path  string `json:"path,omitempty" yaml:"path,omitempty"` // path to object
 }

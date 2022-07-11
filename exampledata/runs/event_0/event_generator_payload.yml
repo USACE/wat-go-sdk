@@ -10,6 +10,6 @@ inputs:
 outputs:
     - filename: event_configuration.json
       resource_info:
-        store: s3
-        root: cloud-wat-dev
+        store: Local
+        root: ../exampledata
         path: ../exampledata/runs/event_0/event_configuration.json
