@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,20 +13,53 @@ import (
 	"github.com/aws/aws-sdk-go/service/batch"
 )
 
-func BatchSession() (*batch.Batch, error) {
-	var batchClient *batch.Batch
-	creds := credentials.NewStaticCredentials(
-		os.Getenv("AWS_ACCESS_KEY_ID"),
-		os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		"",
-	)
-	cfg := aws.NewConfig().WithRegion(os.Getenv("AWS_REGION")).WithCredentials(creds)
-	s, err := session.NewSession(cfg)
-	if err != nil {
-		return batchClient, nil
+type CloudProvider interface {
+	//initialize it with some sort of configuration?
+	ProvisionResources(job *Job) error
+	TearDownResources(job *Job) error
+	ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error
+}
+type BatchCloudProvider struct {
+	BatchSession *batch.Batch
+}
+
+func (b BatchCloudProvider) ProvisionResources(job *Job) error {
+	return nil
+}
+func (b BatchCloudProvider) TearDownResources(job *Job) error {
+	return nil
+}
+func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error {
+	return nil
+}
+
+func InitalizeSession(config Config) (CloudProvider, error) {
+	//check the config to see if it should be batch or some other provider?
+	switch config.CloudProvider {
+	case BATCH:
+		provider := BatchCloudProvider{}
+		var batchClient *batch.Batch
+		awsconfig, err := config.PrimaryConfig()
+		if err != nil {
+			return provider, err
+		}
+		creds := credentials.NewStaticCredentials(
+			awsconfig.AWS_ACCESS_KEY_ID,
+			awsconfig.AWS_SECRET_ACCESS_KEY,
+			"",
+		)
+		cfg := aws.NewConfig().WithRegion(awsconfig.AWS_REGION).WithCredentials(creds)
+		s, err := session.NewSession(cfg)
+		if err != nil {
+			return provider, err
+		}
+		batchClient = batch.New(s)
+		provider.BatchSession = batchClient
+		return provider, nil
+	default:
+		return nil, errors.New("cloud provider unknown")
 	}
-	batchClient = batch.New(s)
-	return batchClient, nil
+
 }
 
 const (
