@@ -81,6 +81,13 @@ type Message struct {
 	timeStamp time.Time
 }
 
+func InitConfigFromPath(configPath string) error {
+	cfg, err := readConfig(configPath)
+	if err != nil {
+		return err
+	}
+	return InitConfig(cfg)
+}
 func InitConfig(cfg Config) error {
 	PluginConfig.Config = cfg
 	PluginConfig.stores = make(map[string]filestore.FileStore)
