@@ -11,25 +11,78 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/batch"
+	"github.com/usace/wat-go-sdk/plugin"
 )
 
 type CloudProvider interface {
 	//initialize it with some sort of configuration?
-	ProvisionResources(job *Job) error
-	TearDownResources(job *Job) error
+	ProvisionResources(jobManager *JobManager) error
+	TearDownResources(job Job) error
 	ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error
 }
 type BatchCloudProvider struct {
 	BatchSession *batch.Batch
 }
 
-func (b BatchCloudProvider) ProvisionResources(job *Job) error {
+func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
+	resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
+	for _, lm := range jobManager.job.Dag.LinkedManifests {
+		computeResourceRequirements, err := jobManager.LinkedManifestComputeResources(lm.ManifestID)
+		if err != nil {
+			return err
+		}
+		computeEnvOutput, err := newComputeEnvironment(b.BatchSession, computeResourceRequirements.ComputeEnvironment)
+		computeEnvironmentArn := computeEnvOutput.ComputeEnvironmentArn
+
+		queueArn := lm.ManifestID         //@TODO: provisioned with batch
+		jobDefinitionArn := lm.ManifestID //@TODO: provisioned with batch
+
+		lmResource := provisionedResources{
+			LinkedManifestID:      lm.ManifestID,
+			ComputeEnvironmentARN: computeEnvironmentArn,
+			JobDefinitionARN:      &jobDefinitionArn,
+			JobARN:                []*string{},
+			QueueARN:              &queueArn,
+		}
+		resources[lm.ManifestID] = lmResource
+	}
+	jobManager.job.Dag.Resources = resources
+	plugin.Log(plugin.Message{
+		Message: "Placeholder: PROVISION resources",
+		Level:   plugin.INFO,
+		Sender:  jobManager.job.Id,
+	})
 	return nil
 }
-func (b BatchCloudProvider) TearDownResources(job *Job) error {
+func (b BatchCloudProvider) TearDownResources(job Job) error {
+	plugin.Log(plugin.Message{
+		Message: "Placeholder: Deallocate / Deregister / Destroy resources",
+		Level:   plugin.INFO,
+		Sender:  job.Id,
+	})
+	for _, resources := range job.Dag.Resources {
+		//kill all active jobs?
+		for _, jobArn := range resources.JobARN {
+			fmt.Println(jobArn)
+		}
+		deleteJobDefinition(b.BatchSession, resources.JobDefinitionARN)
+		deleteQueue(b.BatchSession, resources.QueueARN)
+		deleteComputeEnvironment(b.BatchSession, resources.ComputeEnvironmentARN)
+	}
 	return nil
 }
 func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error {
+	batchJobArn := "Placeholder for Batch response"
+
+	//set job arn
+	resources, ok := job.Dag.Resources[linkedManifest.ManifestID]
+
+	if ok {
+		resources.JobARN = append(resources.JobARN, &batchJobArn)
+		job.Dag.Resources[linkedManifest.ManifestID] = resources
+	} else {
+		return errors.New("task for " + linkedManifest.Plugin.Name)
+	}
 	return nil
 }
 
@@ -71,21 +124,20 @@ const (
 
 // Batch Service Wrappers
 // Takes inputs or outputs from batch.*
-func (bp AWSBatchPayload) DirectiveFromJson(bs interface{}, v any) error {
+func directiveFromJson(bs interface{}, path string, v any) error {
 	var payloadFile string
-
 	switch bs {
 	case COMPUTE_ENV:
-		payloadFile = bp.ComputeEnvironmentFile
+		payloadFile = path
 
 	case JOB_DEFINITION:
-		payloadFile = bp.JobDefinitionFile
+		payloadFile = path
 
 	case JOB_QUEUE:
-		payloadFile = bp.JobQueueFile
+		payloadFile = path
 
 	case NEW_JOB:
-		payloadFile = bp.NewJob
+		payloadFile = path
 
 	default:
 		return errors.New("unrecognized service")
@@ -103,9 +155,9 @@ func (bp AWSBatchPayload) DirectiveFromJson(bs interface{}, v any) error {
 	return nil
 }
 
-func (bp AWSBatchPayload) NewComputeEnvironment(bc *batch.Batch) (output *batch.CreateComputeEnvironmentOutput, err error) {
+func newComputeEnvironment(bc *batch.Batch, computeEnvironmentPath string) (output *batch.CreateComputeEnvironmentOutput, err error) {
 	var computeEnvironment batch.CreateComputeEnvironmentInput
-	err = bp.DirectiveFromJson(COMPUTE_ENV, &computeEnvironment)
+	err = directiveFromJson(COMPUTE_ENV, computeEnvironmentPath, &computeEnvironment)
 	if err != nil {
 		return output, err
 	}
@@ -118,14 +170,8 @@ func (bp AWSBatchPayload) NewComputeEnvironment(bc *batch.Batch) (output *batch.
 	return output, nil
 }
 
-func (bp AWSBatchPayload) DeleteComputeEnvironment(bc *batch.Batch) (output *batch.DeleteComputeEnvironmentOutput, err error) {
-	var computeEnvironment batch.CreateComputeEnvironmentOutput
-	err = bp.DirectiveFromJson(COMPUTE_ENV, &computeEnvironment)
-	if err != nil {
-		return output, err
-	}
-
-	updateComputeEnvironmentData := batch.UpdateComputeEnvironmentInput{ComputeEnvironment: computeEnvironment.ComputeEnvironmentName,
+func deleteComputeEnvironment(bc *batch.Batch, computeEnvironmentArn *string) (output *batch.DeleteComputeEnvironmentOutput, err error) {
+	updateComputeEnvironmentData := batch.UpdateComputeEnvironmentInput{ComputeEnvironment: computeEnvironmentArn,
 		State: aws.String("DISABLED")}
 
 	_, err = bc.UpdateComputeEnvironment(&updateComputeEnvironmentData)
@@ -136,7 +182,7 @@ func (bp AWSBatchPayload) DeleteComputeEnvironment(bc *batch.Batch) (output *bat
 	// Wait for AWS to update resources
 	time.Sleep(90 * time.Second)
 
-	deleteComputeEnvironmentData := batch.DeleteComputeEnvironmentInput{ComputeEnvironment: computeEnvironment.ComputeEnvironmentName}
+	deleteComputeEnvironmentData := batch.DeleteComputeEnvironmentInput{ComputeEnvironment: computeEnvironmentArn}
 
 	output, err = bc.DeleteComputeEnvironment(&deleteComputeEnvironmentData)
 	if err != nil {
@@ -146,9 +192,9 @@ func (bp AWSBatchPayload) DeleteComputeEnvironment(bc *batch.Batch) (output *bat
 	return output, err
 }
 
-func (bp AWSBatchPayload) NewJobDefinition(bc *batch.Batch) (output *batch.RegisterJobDefinitionOutput, err error) {
+func (bp AWSBatchPayload) NewJobDefinition(bc *batch.Batch, path string) (output *batch.RegisterJobDefinitionOutput, err error) {
 	var jobDefinition batch.RegisterJobDefinitionInput
-	err = bp.DirectiveFromJson(JOB_DEFINITION, &jobDefinition)
+	err = directiveFromJson(JOB_DEFINITION, path, &jobDefinition)
 	if err != nil {
 		fmt.Println("Error", err)
 	}
@@ -162,15 +208,8 @@ func (bp AWSBatchPayload) NewJobDefinition(bc *batch.Batch) (output *batch.Regis
 	return output, err
 }
 
-func (bp AWSBatchPayload) DeleteJobDefinition(bc *batch.Batch) (output *batch.DeregisterJobDefinitionOutput, err error) {
-	var jobDefinition batch.RegisterJobDefinitionOutput
-	err = bp.DirectiveFromJson(JOB_DEFINITION, &jobDefinition)
-	if err != nil {
-		fmt.Println("Error", err)
-	}
-
-	jobDefinitionDataInput := batch.DeregisterJobDefinitionInput{JobDefinition: jobDefinition.JobDefinitionArn}
-
+func deleteJobDefinition(bc *batch.Batch, jobDefinitionArn *string) (output *batch.DeregisterJobDefinitionOutput, err error) {
+	jobDefinitionDataInput := batch.DeregisterJobDefinitionInput{JobDefinition: jobDefinitionArn}
 	_, err = bc.DeregisterJobDefinition(&jobDefinitionDataInput)
 
 	if err != nil {
@@ -179,9 +218,9 @@ func (bp AWSBatchPayload) DeleteJobDefinition(bc *batch.Batch) (output *batch.De
 	return output, err
 }
 
-func (bp AWSBatchPayload) NewQueue(bc *batch.Batch, computeEnvironment *string) (output *batch.CreateJobQueueOutput, err error) {
+func (bp AWSBatchPayload) NewQueue(bc *batch.Batch, path string, computeEnvironment *string) (output *batch.CreateJobQueueOutput, err error) {
 	var jobQueue batch.CreateJobQueueInput
-	err = bp.DirectiveFromJson(JOB_QUEUE, &jobQueue)
+	err = directiveFromJson(JOB_QUEUE, path, &jobQueue)
 	if err != nil {
 		fmt.Println("Error", err)
 	}
@@ -199,14 +238,9 @@ func (bp AWSBatchPayload) NewQueue(bc *batch.Batch, computeEnvironment *string) 
 	return output, err
 }
 
-func (bp AWSBatchPayload) DeleteQueue(bc *batch.Batch) (output *batch.DeleteJobQueueOutput, err error) {
-	var jobQueue batch.CreateJobQueueInput
-	err = bp.DirectiveFromJson(JOB_QUEUE, &jobQueue)
-	if err != nil {
-		fmt.Println("Error", err)
-	}
+func deleteQueue(bc *batch.Batch, jobQueueArn *string) (output *batch.DeleteJobQueueOutput, err error) {
 
-	updateQueueData := batch.UpdateJobQueueInput{JobQueue: jobQueue.JobQueueName,
+	updateQueueData := batch.UpdateJobQueueInput{JobQueue: jobQueueArn,
 		State: aws.String("DISABLED")}
 
 	updatedJobQueueData, err := bc.UpdateJobQueue(&updateQueueData)
@@ -229,7 +263,7 @@ func (bp AWSBatchPayload) DeleteQueue(bc *batch.Batch) (output *batch.DeleteJobQ
 //@TODO this looks wrong - this looks like create jobqueue not submit job.
 func (bp AWSBatchPayload) SubmitJob(bc *batch.Batch, computeEnvironment *string) (output *batch.CreateJobQueueOutput, err error) {
 	var jobQueue batch.CreateJobQueueInput
-	err = bp.DirectiveFromJson(JOB_QUEUE, &jobQueue)
+	err = directiveFromJson(JOB_QUEUE, "badpath", &jobQueue)
 	if err != nil {
 		fmt.Println("Error", err)
 	}

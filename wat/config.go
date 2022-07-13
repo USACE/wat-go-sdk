@@ -1,6 +1,11 @@
 package wat
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"os"
+)
 
 type AwsConfig struct {
 	Name                  string `json:"aws_config_name,omitempty"`
@@ -33,5 +38,21 @@ func (c Config) PrimaryConfig() (AwsConfig, error) {
 		}
 	}
 	nilconfig := AwsConfig{}
-	return nilconfig, errors.New("No config was marked as primary.")
+	return nilconfig, errors.New("no config was marked as primary")
+}
+func InitConfig(path string) (Config, error) {
+	var cfg Config
+	file, err := os.Open(path)
+	if err != nil {
+		return cfg, err
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return cfg, err
+	}
+	err = json.Unmarshal(bytes, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+	return cfg, nil
 }
