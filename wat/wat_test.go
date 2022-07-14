@@ -30,7 +30,7 @@ func TestComputePayloads(t *testing.T) {
 		t.Fail()
 	}
 	//read a jobmanifest into memory
-	plugin.SetLogLevel(plugin.INFO)
+	plugin.SetLogLevel(plugin.DEBUG)
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := wat.JobManifest{}
 	readObject(t, path, &jobManifest)
