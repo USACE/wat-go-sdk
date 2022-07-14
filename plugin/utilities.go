@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -201,13 +202,15 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 
 func (l GlobalLogger) write(log Message) (n int, err error) {
 	log.timeStamp = time.Now()
+	pc, file, line, _ := runtime.Caller(2)
+	funcName := runtime.FuncForPC(pc).Name()
 	sender := ""
 	if log.Sender == "" {
 		sender = "Unknown Sender"
 	} else {
 		sender = log.Sender
 	}
-	fmt.Printf("%v issues %v at %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, log.Message)
+	fmt.Printf("%v issues %v at %v from file %v on line %v in method name %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, file, line, funcName, log.Message)
 	return 0, nil
 }
 

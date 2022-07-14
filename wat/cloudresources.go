@@ -3,7 +3,6 @@ package wat
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -29,21 +28,41 @@ func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
 	for _, lm := range jobManager.job.Dag.LinkedManifests {
 		computeResourceRequirements, err := jobManager.LinkedManifestComputeResources(lm.ManifestID)
 		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  jobManager.job.Id,
+			})
 			return err
 		}
 		//get and store the arn's
 		computeEnvOutput, err := newComputeEnvironment(b.BatchSession, computeResourceRequirements.ComputeEnvironment)
 		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  jobManager.job.Id,
+			})
 			return err
 		}
 		computeEnvironmentArn := computeEnvOutput.ComputeEnvironmentArn
 		queueOutput, err := newQueue(b.BatchSession, computeResourceRequirements.Queue, computeEnvironmentArn)
 		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  jobManager.job.Id,
+			})
 			return err
 		}
 		queueArn := queueOutput.JobQueueArn
-		jobOutput, err := newJobDefinition(b.BatchSession, computeResourceRequirements.Definition)
+		jobOutput, err := newJobDefinition(b.BatchSession, computeResourceRequirements.JobDefinition)
 		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  jobManager.job.Id,
+			})
 			return err
 		}
 		jobDefinitionArn := jobOutput.JobDefinitionArn
@@ -65,19 +84,41 @@ func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
 	return nil
 }
 func (b BatchCloudProvider) TearDownResources(job Job) error {
-	plugin.Log(plugin.Message{
-		Message: "Placeholder: Deallocate / Deregister / Destroy resources",
-		Level:   plugin.INFO,
-		Sender:  job.Id,
-	})
+
 	for _, resources := range job.Dag.Resources {
 		//kill all active jobs?
 		for _, jobArn := range resources.JobARN {
-			fmt.Println(jobArn)
+			err := cancelJob(b.BatchSession, jobArn)
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
 		}
-		deleteJobDefinition(b.BatchSession, resources.JobDefinitionARN)
-		deleteQueue(b.BatchSession, resources.QueueARN)
-		deleteComputeEnvironment(b.BatchSession, resources.ComputeEnvironmentARN)
+		_, err := deleteJobDefinition(b.BatchSession, resources.JobDefinitionARN)
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
+		}
+		_, err = deleteQueue(b.BatchSession, resources.QueueARN)
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
+		}
+		_, err = deleteComputeEnvironment(b.BatchSession, resources.ComputeEnvironmentARN)
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
+		}
 	}
 	return nil
 }
@@ -113,12 +154,8 @@ func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath st
 		JobName:       &payloadPath,               //this is unique but may be more than 128 characters.
 		JobQueue:      resources.QueueARN,
 		Parameters:    nil, //parameters?
-		//PropagateTags:              &proptags, //i think.
 		RetryStrategy: nil,
-		//SchedulingPriorityOverride: nil,
-		//ShareIdentifier:            nil,
-		//Tags:                       nil,
-		Timeout: nil,
+		Timeout:       nil,
 	}
 	output, err := b.BatchSession.SubmitJob(&jobInput)
 	if err != nil {
@@ -133,7 +170,19 @@ func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath st
 	}
 	return nil
 }
-
+func cancelJob(b *batch.Batch, jobId *string) error {
+	reason := "mind your buisness."
+	//terminate fails running jobs also.
+	cancelInput := batch.TerminateJobInput{
+		JobId:  jobId,
+		Reason: &reason,
+	}
+	_, err := b.TerminateJob(&cancelInput)
+	if err != nil {
+		return err
+	}
+	return err
+}
 func InitalizeSession(config Config) (CloudProvider, error) {
 	//check the config to see if it should be batch or some other provider?
 	switch config.CloudProvider {
@@ -244,7 +293,7 @@ func newJobDefinition(bc *batch.Batch, path string) (output *batch.RegisterJobDe
 	var jobDefinition batch.RegisterJobDefinitionInput
 	err = directiveFromJson(JOB_DEFINITION, path, &jobDefinition)
 	if err != nil {
-		fmt.Println("Error", err)
+		return output, err
 	}
 
 	output, err = bc.RegisterJobDefinition(&jobDefinition)
@@ -270,7 +319,7 @@ func newQueue(bc *batch.Batch, path string, computeEnvironment *string) (output 
 	var jobQueue batch.CreateJobQueueInput
 	err = directiveFromJson(JOB_QUEUE, path, &jobQueue)
 	if err != nil {
-		fmt.Println("Error", err)
+		return output, err
 	}
 
 	// TODO: Think through the jobQueue.ComputeEnvironmentOrder list
@@ -293,7 +342,7 @@ func deleteQueue(bc *batch.Batch, jobQueueArn *string) (output *batch.DeleteJobQ
 
 	updatedJobQueueData, err := bc.UpdateJobQueue(&updateQueueData)
 	if err != nil {
-		fmt.Println("Error...", err)
+		return output, err
 	}
 
 	// Wait for AWS to update resources
