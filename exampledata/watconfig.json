@@ -1,5 +1,5 @@
 {
-	"cloud_provider_type": "AWS Batch",
+	"cloud_provider_type": "Mock",
 	"aws_configs": [{
 		"aws_config_name": "Test With MINIO",
 		"is_primary_config": true,

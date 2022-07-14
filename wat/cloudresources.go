@@ -19,6 +19,34 @@ type CloudProvider interface {
 	TearDownResources(job Job) error
 	ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error
 }
+type MockProvider struct {
+}
+
+func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
+	plugin.Log(plugin.Message{
+		Message: "provisioning resources",
+		Level:   plugin.INFO,
+		Sender:  jobManager.job.Id,
+	})
+	return nil
+}
+func (m MockProvider) TearDownResources(job Job) error {
+	plugin.Log(plugin.Message{
+		Message: "Kablooie",
+		Level:   plugin.INFO,
+		Sender:  job.Id,
+	})
+	return nil
+}
+func (m MockProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error {
+	plugin.Log(plugin.Message{
+		Message: "Processing Task",
+		Level:   plugin.INFO,
+		Sender:  job.Id,
+	})
+	return nil
+}
+
 type BatchCloudProvider struct {
 	BatchSession *batch.Batch
 }
@@ -206,6 +234,8 @@ func InitalizeSession(config Config) (CloudProvider, error) {
 		batchClient = batch.New(s)
 		provider.BatchSession = batchClient
 		return provider, nil
+	case MOCK:
+		return MockProvider{}, nil
 	default:
 		return nil, errors.New("cloud provider unknown")
 	}

@@ -23,6 +23,7 @@ type Provider string
 
 const (
 	BATCH Provider = "AWS Batch"
+	MOCK  Provider = "Mock"
 )
 
 type Config struct {
