@@ -19,12 +19,6 @@ type AwsConfig struct {
 	S3_DISABLE_SSL        bool   `json:"aws_disable_ssl,omitempty"`      //for testing with minio
 	S3_FORCE_PATH_STYLE   bool   `json:"aws_force_path_style,omitempty"` //for testing with minio
 }
-type Provider string
-
-const (
-	BATCH Provider = "AWS Batch"
-	MOCK  Provider = "Mock"
-)
 
 type Config struct {
 	CloudProvider Provider    `json:"cloud_provider_type"`

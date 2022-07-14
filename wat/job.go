@@ -299,8 +299,13 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int, cloud C
 	if err != nil {
 		return err
 	} else {
+		message := "dependencies: "
+		for _, s := range dependencies {
+			message = fmt.Sprintf("%v, %v", message, *s)
+
+		}
 		plugin.Log(plugin.Message{
-			Message: fmt.Sprint(dependencies),
+			Message: fmt.Sprint(message),
 			Level:   plugin.INFO,
 			Sender:  job.Id,
 		})

@@ -13,6 +13,19 @@ import (
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
+type Provider string
+
+const (
+	BATCH Provider = "AWS Batch"
+	MOCK  Provider = "Mock"
+)
+
+type ComputeResourceRequirements struct {
+	LinkedManifestID   string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	ComputeEnvironment string `json:"compute_environment" yaml:"compute_environment"` //is this provided as JSON?
+	JobDefinition      string `json:"job_definition" yaml:"job_definition"`
+	Queue              string `json:"job_queue" yaml:"job_queue"`
+}
 type CloudProvider interface {
 	//initialize it with some sort of configuration?
 	ProvisionResources(jobManager *JobManager) error
@@ -23,8 +36,23 @@ type MockProvider struct {
 }
 
 func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
+	resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
+	for _, lm := range jobManager.job.Dag.LinkedManifests {
+		computeEnvironmentArn := lm.ManifestID
+		queueArn := lm.ManifestID
+		jobDefinitionArn := lm.ManifestID
+		lmResource := provisionedResources{
+			LinkedManifestID:      lm.ManifestID,
+			ComputeEnvironmentARN: &computeEnvironmentArn,
+			JobDefinitionARN:      &jobDefinitionArn,
+			JobARN:                []*string{},
+			QueueARN:              &queueArn,
+		}
+		resources[lm.ManifestID] = lmResource
+	}
+	jobManager.job.Dag.Resources = resources
 	plugin.Log(plugin.Message{
-		Message: "provisioning resources",
+		Message: "provisioned resources",
 		Level:   plugin.INFO,
 		Sender:  jobManager.job.Id,
 	})
@@ -44,6 +72,14 @@ func (m MockProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, 
 		Level:   plugin.INFO,
 		Sender:  job.Id,
 	})
+	resources, ok := job.Dag.Resources[linkedManifest.ManifestID]
+	batchJobArn := payloadPath
+	if ok {
+		resources.JobARN = append(resources.JobARN, &batchJobArn)
+		job.Dag.Resources[linkedManifest.ManifestID] = resources
+	} else {
+		return errors.New("task for " + linkedManifest.Plugin.Name)
+	}
 	return nil
 }
 
@@ -105,7 +141,7 @@ func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
 	}
 	jobManager.job.Dag.Resources = resources
 	plugin.Log(plugin.Message{
-		Message: "Placeholder: PROVISION resources",
+		Message: "provisioned resources",
 		Level:   plugin.INFO,
 		Sender:  jobManager.job.Id,
 	})
