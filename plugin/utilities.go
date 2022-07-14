@@ -214,6 +214,11 @@ func (l GlobalLogger) write(log Message) (n int, err error) {
 		funcName := runtime.FuncForPC(pc).Name()
 		fmt.Printf("%v issues %v at %v from file %v on line %v in method name %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, file, line, funcName, log.Message)
 	} else {
+		if log.Level >= ERROR {
+			pc, file, line, _ := runtime.Caller(2)
+			funcName := runtime.FuncForPC(pc).Name()
+			fmt.Printf("%v issues %v at %v from file %v on line %v in method name %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, file, line, funcName, log.Message)
+		}
 		fmt.Printf("%v issues %v at %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, log.Message)
 	}
 	return 0, nil
