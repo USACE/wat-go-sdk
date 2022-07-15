@@ -26,7 +26,7 @@ func (c Config) PrimaryConfig() (AwsConfig, error) {
 		}
 	}
 	nilconfig := AwsConfig{}
-	return nilconfig, errors.New("No config was marked as primary.")
+	return nilconfig, errors.New("no config was marked as primary")
 }
 
 /*
