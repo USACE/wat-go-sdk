@@ -32,56 +32,6 @@ type CloudProvider interface {
 	TearDownResources(job Job) error
 	ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error
 }
-type MockProvider struct {
-}
-
-func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
-	resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
-	for _, lm := range jobManager.job.Dag.LinkedManifests {
-		computeEnvironmentArn := lm.ManifestID
-		queueArn := lm.ManifestID
-		jobDefinitionArn := lm.ManifestID
-		lmResource := provisionedResources{
-			LinkedManifestID:      lm.ManifestID,
-			ComputeEnvironmentARN: &computeEnvironmentArn,
-			JobDefinitionARN:      &jobDefinitionArn,
-			JobARN:                []*string{},
-			QueueARN:              &queueArn,
-		}
-		resources[lm.ManifestID] = lmResource
-	}
-	jobManager.job.Dag.Resources = resources
-	plugin.Log(plugin.Message{
-		Message: "provisioned resources",
-		Level:   plugin.INFO,
-		Sender:  jobManager.job.Id,
-	})
-	return nil
-}
-func (m MockProvider) TearDownResources(job Job) error {
-	plugin.Log(plugin.Message{
-		Message: "Kablooie",
-		Level:   plugin.INFO,
-		Sender:  job.Id,
-	})
-	return nil
-}
-func (m MockProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error {
-	plugin.Log(plugin.Message{
-		Message: "Processing Task",
-		Level:   plugin.INFO,
-		Sender:  job.Id,
-	})
-	resources, ok := job.Dag.Resources[linkedManifest.ManifestID]
-	batchJobArn := payloadPath
-	if ok {
-		resources.JobARN = append(resources.JobARN, &batchJobArn)
-		job.Dag.Resources[linkedManifest.ManifestID] = resources
-	} else {
-		return errors.New("task for " + linkedManifest.Plugin.Name)
-	}
-	return nil
-}
 
 type BatchCloudProvider struct {
 	BatchSession *batch.Batch
