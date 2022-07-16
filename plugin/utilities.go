@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -81,6 +82,13 @@ type Message struct {
 	timeStamp time.Time
 }
 
+func InitConfigFromPath(configPath string) error {
+	cfg, err := readConfig(configPath)
+	if err != nil {
+		return err
+	}
+	return InitConfig(cfg)
+}
 func InitConfig(cfg Config) error {
 	PluginConfig.Config = cfg
 	PluginConfig.stores = make(map[string]filestore.FileStore)
@@ -194,13 +202,25 @@ func getStore(bucketName string) (filestore.FileStore, error) {
 
 func (l GlobalLogger) write(log Message) (n int, err error) {
 	log.timeStamp = time.Now()
+
 	sender := ""
 	if log.Sender == "" {
 		sender = "Unknown Sender"
 	} else {
 		sender = log.Sender
 	}
-	fmt.Printf("%v issues %v at %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, log.Message)
+	if l.Level == DEBUG {
+		pc, file, line, _ := runtime.Caller(2)
+		funcName := runtime.FuncForPC(pc).Name()
+		fmt.Printf("%v issues %v at %v from file %v on line %v in method name %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, file, line, funcName, log.Message)
+	} else {
+		if log.Level >= ERROR {
+			pc, file, line, _ := runtime.Caller(2)
+			funcName := runtime.FuncForPC(pc).Name()
+			fmt.Printf("%v issues %v at %v from file %v on line %v in method name %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, file, line, funcName, log.Message)
+		}
+		fmt.Printf("%v issues %v at %v\n\t%v\n", sender, log.Level.String(), log.timeStamp, log.Message)
+	}
 	return 0, nil
 }
 

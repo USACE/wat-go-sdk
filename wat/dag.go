@@ -31,9 +31,10 @@ func (lms *linkedManifestStack) Pop() (LinkedModelManifest, error) {
 	return lm, nil
 }
 
-type provisionedResources struct {
+type provisionedResources struct { //this is very aws specific. can we make this provider agnostic? should it live here?
 	LinkedManifestID      string
 	ComputeEnvironmentARN *string
+	JobDefinitionARN      *string
 	JobARN                []*string
 	QueueARN              *string
 }

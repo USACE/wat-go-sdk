@@ -1,14 +1,39 @@
-version: '3.8'
-
+version: '3'
 services:
-  wat-go-sdk:
-    container_name: wat-dev
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  minio:
+    container_name: go-sdk-s3
+    image: minio/minio:RELEASE.2022-03-17T06-34-49Z.fips
+    environment:
+      - MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE
+      - MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    command: server /data --console-address ":9001"
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+  minio_init:
+    container_name: go-sdk-s3_init
+    image: minio/mc:RELEASE.2022-03-17T07-21-29Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add minio http://minio:9000 AKIAIOSFODNN7EXAMPLE wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY;
+      /usr/bin/mc rb --force minio/model-library/;
+      /usr/bin/mc mb minio/model-library/;
+      /usr/bin/mc policy set public minio/model-library;
+      /usr/bin/mc cp --recursive /exampledata/ minio/model-library/;
+      exit 0;
+      "
     volumes:
-      - ./:/app
-    env_file:
-      - ./.env
-    entrypoint: |
-      /go/bin/CompileDaemon --build="go build main.go" --command ./main
+      - ./exampledata:/exampledata
+  wat-go-sdk:
+    container_name: wat-go-sdk
+    depends_on: 
+      - minio_init
+    build: .
+    restart: always
+    ports:
+      - 8080:8080
+    volumes:
+      - ./:/workspaces
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -63,12 +63,15 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 
 // JobManager
 type JobManager struct {
-	job Job
+	job              Job
+	config           Config
+	cloud            CloudProvider
+	computeResources []ComputeResourceRequirements
 	//store         filestore.FileStore
 	//captainCrunch *batch.Batch
 }
 
-func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileStore, batchClient *batch.Batch) JobManager {
+func Init(jobManifest JobManifest, config Config) (JobManager, error) {
 	jobManager := JobManager{}
 	job, err := jobManifest.ConvertToJob()
 	if err != nil {
@@ -82,12 +85,25 @@ func Init(jobManifest JobManifest) (JobManager, error) { //, fs filestore.FileSt
 
 	job.Dag.LinkedManifests = orderedManifests
 	jobManager.job = job
-
+	jobManager.config = config
+	jobManager.computeResources = jobManifest.ComputeResources
+	cp, err := InitalizeSession(config)
+	if err != nil {
+		return jobManager, err
+	}
+	jobManager.cloud = cp
 	return jobManager, nil
 }
-
+func (jm JobManager) LinkedManifestComputeResources(linkedManifestId string) (ComputeResourceRequirements, error) {
+	for _, r := range jm.computeResources {
+		if r.LinkedManifestID == linkedManifestId {
+			return r, nil
+		}
+	}
+	return ComputeResourceRequirements{}, errors.New("linked manifest id not found in compute resources")
+}
 func (jm JobManager) ProcessJob() error {
-	err := jm.job.ProvisionResources()
+	err := jm.cloud.ProvisionResources(&jm)
 	if err != nil {
 		return err
 	}
@@ -100,23 +116,32 @@ func (jm JobManager) ProcessJob() error {
 				Level:   plugin.ERROR,
 				Sender:  jm.job.Id,
 			})
-			err = jm.job.DestructResources()
+			err = jm.cloud.TearDownResources(jm.job)
 			if err != nil {
-				fmt.Println(err)
+				plugin.Log(plugin.Message{
+					Message: fmt.Sprintf("%v\n", err),
+					Level:   plugin.ERROR,
+					Sender:  jm.job.Id,
+				})
+				//send error in an error cannel?
 			}
 		}
 	}()
 
-	err = jm.job.GeneratePayloads() //jm.store
+	err = jm.job.GeneratePayloads()
 	if err != nil {
-		fmt.Println(err)
+		plugin.Log(plugin.Message{
+			Message: fmt.Sprintf("%v\n", err),
+			Level:   plugin.ERROR,
+			Sender:  jm.job.Id,
+		})
 		return err
 	}
 
 	//create error channel.
 	for i := jm.job.EventStartIndex; i < jm.job.EventEndIndex; i++ {
 		go func(index int) {
-			err = jm.job.ComputeEvent(index)
+			err = jm.job.ComputeEvent(index, jm.cloud)
 			if err != nil {
 				plugin.Log(plugin.Message{
 					Message: fmt.Sprintf("%v\n", err),
@@ -133,7 +158,7 @@ func (jm JobManager) ProcessJob() error {
 
 	}
 	//need a wait group or a buffer channel to stall the destruction until we finish the jobs
-	err = jm.job.DestructResources()
+	err = jm.cloud.TearDownResources(jm.job)
 	if err != nil {
 		plugin.Log(plugin.Message{
 			Message: fmt.Sprintf("%v\n", err),
@@ -143,7 +168,7 @@ func (jm JobManager) ProcessJob() error {
 		return err
 	}
 	plugin.Log(plugin.Message{
-		Message: fmt.Sprint("\nJob Processed!\n\n"),
+		Message: "\nJob Processed!\n\n",
 		Level:   plugin.INFO,
 		Sender:  jm.job.Id,
 	})
@@ -173,38 +198,6 @@ type Job struct {
 }
 
 type PayloadProcessor func(payload plugin.ModelPayload, job Job, eventIndex int, modelManifest LinkedModelManifest) error
-
-//ProvisionResources
-func (job *Job) ProvisionResources() error {
-	//make sure job arn list is provisioned for the total number of events to be computed.
-	//depends on cloud-resources//
-	resources := make(map[string]provisionedResources, len(job.Dag.LinkedManifests))
-	for _, lm := range job.Dag.LinkedManifests {
-		queueArn := lm.ManifestID              //@TODO: provisioned with batch
-		computeEnvironmentArn := lm.ManifestID //@TODO: provisioned with batch
-		lmResource := provisionedResources{
-			LinkedManifestID:      lm.ManifestID,
-			ComputeEnvironmentARN: &computeEnvironmentArn,
-			JobARN:                []*string{},
-			QueueARN:              &queueArn,
-		}
-		resources[lm.ManifestID] = lmResource
-	}
-	job.Dag.Resources = resources
-	return nil
-}
-
-//DestructResources
-func (job Job) DestructResources() error {
-
-	//depends on cloud-resources//
-	plugin.Log(plugin.Message{
-		Message: "Placeholder: Deallocate / Deregister / Destroy resources",
-		Level:   plugin.INFO,
-		Sender:  job.Id,
-	})
-	return nil
-}
 
 func (job Job) eventLevelOutputDirectory(eventIndex int) string {
 	return fmt.Sprintf("%vevent_%v/", job.OutputDestination.Path, eventIndex)
@@ -286,9 +279,9 @@ func (job Job) GeneratePayloads() error {
 }
 
 //ComputeEvent
-func (job Job) ComputeEvent(eventIndex int) error {
+func (job Job) ComputeEvent(eventIndex int, cloud CloudProvider) error {
 	for _, n := range job.Dag.LinkedManifests {
-		job.submitTask(n, eventIndex)
+		job.submitTask(n, eventIndex, cloud)
 	}
 	plugin.Log(plugin.Message{
 		Message: fmt.Sprintf("computing event %v\n", eventIndex),
@@ -298,7 +291,7 @@ func (job Job) ComputeEvent(eventIndex int) error {
 	return nil
 }
 
-func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
+func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int, cloud CloudProvider) error {
 
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
@@ -306,8 +299,13 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 	if err != nil {
 		return err
 	} else {
+		message := "dependencies: "
+		for _, s := range dependencies {
+			message = fmt.Sprintf("%v, %v", message, *s)
+
+		}
 		plugin.Log(plugin.Message{
-			Message: fmt.Sprint(dependencies),
+			Message: fmt.Sprint(message),
 			Level:   plugin.INFO,
 			Sender:  job.Id,
 		})
@@ -319,18 +317,6 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int) error {
 		Level:   plugin.INFO,
 		Sender:  job.Id,
 	})
-	//submit to batch.
-	//@TODO: replace with call to batch
-	batchJobArn := "Placeholder for Batch response"
-
-	//set job arn
-	resources, ok := job.Dag.Resources[manifest.ManifestID]
-
-	if ok {
-		resources.JobARN = append(resources.JobARN, &batchJobArn)
-		job.Dag.Resources[manifest.ManifestID] = resources
-	} else {
-		return errors.New("task for " + manifest.Plugin.Name)
-	}
-	return nil
+	//submit to cloud provider
+	return cloud.ProcessTask(job, eventIndex, payloadPath, manifest)
 }

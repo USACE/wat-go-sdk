@@ -25,14 +25,18 @@ func TestReadLinkedManifest(t *testing.T) {
 }
 
 func TestComputePayloads(t *testing.T) {
+	cfg, err := wat.InitConfig("../exampledata/watconfig.json")
+	if err != nil {
+		t.Fail()
+	}
 	//read a jobmanifest into memory
-	plugin.SetLogLevel(plugin.INFO)
+	plugin.SetLogLevel(plugin.DEBUG)
 	path := "../exampledata/wat-job.yaml"
 	jobManifest := wat.JobManifest{}
 	readObject(t, path, &jobManifest)
 
 	//construct a job manager
-	jobManager, err := wat.Init(jobManifest)
+	jobManager, err := wat.Init(jobManifest, cfg)
 	if err != nil {
 		plugin.Log(plugin.Message{
 			Message: err.Error(),

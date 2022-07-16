@@ -14,11 +14,11 @@ RUN go mod download
 RUN go mod tidy
 RUN go build main.go
 ENTRYPOINT /go/bin/CompileDaemon --build="go build main.go"
-
-# Production container
-#FROM golang:1.18-alpine3.15 AS prod
-#RUN apk add --update docker openrc
-#RUN rc-update add docker boot
-#WORKDIR /app
-#COPY --from=dev /app/main .
 #CMD [ "./main" ]
+# Production container
+FROM golang:1.18-alpine3.15 AS prod
+RUN apk add --update docker openrc
+RUN rc-update add docker boot
+WORKDIR /app
+COPY --from=dev /app/main .
+CMD [ "./main" ]
