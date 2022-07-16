@@ -14,46 +14,39 @@ import (
 
 func main() {
 	fmt.Println("wat-go-sdk testing")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-		_, cPresent := params["compute"]
-		if cPresent {
-			cfg, err := wat.InitConfig("./exampledata/watconfig.json")
-			if err != nil {
-				log.Fatal("error reading config")
-			}
-			//read a jobmanifest into memory
-			plugin.SetLogLevel(plugin.DEBUG)
-			path := "../exampledata/wat-job.yaml"
-			jobManifest := wat.JobManifest{}
-			readObject(path, &jobManifest)
+	http.HandleFunc("/compute", func(w http.ResponseWriter, r *http.Request) {
+		cfg, err := wat.InitConfig("./exampledata/watconfig.json")
+		if err != nil {
+			log.Fatal("error reading config")
+		}
+		//read a jobmanifest into memory
+		plugin.SetLogLevel(plugin.DEBUG)
+		path := "./exampledata/wat-job-main.yaml"
+		jobManifest := wat.JobManifest{}
+		readObject(path, &jobManifest)
 
-			//construct a job manager
-			jobManager, err := wat.Init(jobManifest, cfg)
-			if err != nil {
-				plugin.Log(plugin.Message{
-					Message: err.Error(),
-					Level:   plugin.ERROR,
-				})
-				log.Fatal("errors with the job manager")
-			}
-
-			// validate -
-			err = jobManager.Validate()
-			if err != nil {
-				plugin.Log(plugin.Message{
-					Message: err.Error(),
-					Level:   plugin.ERROR,
-				})
-				log.Fatal("errors with the job.")
-			}
-
-			//compute...
-			err = jobManager.ProcessJob()
-		} else {
-			http.Error(w, "404 not found.", http.StatusNotFound)
+		//construct a job manager
+		jobManager, err := wat.Init(jobManifest, cfg)
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+			})
+			log.Fatal("errors with the job manager")
 		}
 
+		// validate -
+		err = jobManager.Validate()
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+			})
+			log.Fatal("errors with the job.")
+		}
+
+		//compute...
+		err = jobManager.ProcessJob()
 	})
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)

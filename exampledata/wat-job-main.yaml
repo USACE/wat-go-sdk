@@ -1,0 +1,99 @@
+job_identifier: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
+event_start_index: 0
+event_end_index: 1
+models:
+  - name: EG
+    files:
+      - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510
+        filename: EG.json
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/EG.json
+  - name: fc
+    files:
+      - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+        filename: fc.json
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/fc.json
+  - name: hsm
+    files:
+      - id: 4a04b3f9-2413-4143-865a-769a9432c33f
+        filename: hsm.json        
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/hsm.json
+  - name: Muncie
+    alternative: .p04
+    files:
+      - id: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2
+        filename: Muncie.p04.tmp.hdf        
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/Muncie.p04.tmp.hdf
+      - id: cb950b3f-e4ff-4109-936c-5991ad42fb45
+        filename: Muncie.b04        
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/Muncie.b04
+      - id: ea5ee62f-1b98-4ae2-bd50-bce6b9511615
+        filename: Muncie.x04
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/Muncie.x04
+      - id: 491c7e8a-517a-4933-8b25-27eb64a38f8e
+        filename: Muncie.c04
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/Muncie.c04
+      - id: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
+        filename: Muncie.prj
+        resource_info:
+          store: s3
+          root: model-library
+          path: /kanawha/models/Muncie.prj
+linked_manifests: #could be stored in a database rather than files on a 
+  - store: s3
+    root: model-library
+    path: ./exampledata/ras_mutator_linked_manifest.yaml
+  - store: s3
+    root: model-library
+    path: ./exampledata/event_generator_linked_manifest.yaml
+  - store: s3
+    root: model-library
+    path: ./exampledata/hsm_linked_manifest.yaml
+  - store: s3
+    root: model-library
+    path: ./exampledata/fc_linked_manifest.yaml
+
+#  - store: s3
+#    root: model-library
+#    path: /kanawha/models/ras_runner_linked_manifest.yaml
+resource_requirements:
+  - linked_manifest_id: 4aa60be5-a639-40cd-b006-acf6f1f595f4
+    compute_environment: defaultstringtobereplacedlater
+    job_definition: jobdefinitionpathorarn
+    job_queue: jobqueuepathorarn
+  - linked_manifest_id: 2c852cf8-1db6-4464-88be-638c603c8e48
+    compute_environment: defaultstringtobereplacedlater
+    job_definition: jobdefinitionpathorarn
+    job_queue: jobqueuepathorarn
+  - linked_manifest_id: e46085f4-1934-4172-be74-efb611608544
+    compute_environment: defaultstringtobereplacedlater
+    job_definition: jobdefinitionpathorarn
+    job_queue: jobqueuepathorarn
+  - linked_manifest_id: 437741a5-8f4d-4206-872d-0564153501cc
+    compute_environment: defaultstringtobereplacedlater
+    job_definition: jobdefinitionpathorarn
+    job_queue: jobqueuepathorarn
+output_destination:
+  store: Local
+  root: ./exampledata
+  path: ./exampledata/runs-main/
