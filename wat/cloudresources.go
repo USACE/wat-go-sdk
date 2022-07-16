@@ -221,7 +221,7 @@ func InitalizeSession(config Config) (CloudProvider, error) {
 		provider.BatchSession = batchClient
 		return provider, nil
 	case MOCK:
-		return MockProvider{}, nil
+		return MockProvider{config: config}, nil
 	default:
 		return nil, errors.New("cloud provider unknown")
 	}

@@ -18,6 +18,7 @@ import (
 )
 
 type MockProvider struct {
+	config Config
 }
 
 func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
@@ -63,8 +64,16 @@ func (m MockProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, 
 	if ok {
 		resources.JobARN = append(resources.JobARN, &batchJobArn)
 		job.Dag.Resources[linkedManifest.ManifestID] = resources
-		env := make([]string, 0)
-		_, err := startContainer(linkedManifest.ImageAndTag, batchJobArn, env)
+		pconfig, err := m.config.PrimaryConfig()
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
+		}
+		env := pconfig.EnvironmentVariables()
+		_, err = startContainer(linkedManifest.ImageAndTag, batchJobArn, env)
 		if err != nil {
 			plugin.Log(plugin.Message{
 				Message: err.Error(),

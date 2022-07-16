@@ -3,6 +3,7 @@ package wat
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -50,4 +51,20 @@ func InitConfig(path string) (Config, error) {
 		return cfg, err
 	}
 	return cfg, nil
+}
+func (c AwsConfig) EnvironmentVariables() []string {
+	ret := make([]string, 8)
+	ret[0] = "AWS_ACCESS_KEY_ID=" + c.AWS_ACCESS_KEY_ID
+	ret[1] = "AWS_SECRET_ACCESS_KEY=" + c.AWS_SECRET_ACCESS_KEY
+	ret[2] = "AWS_BUCKET=" + c.AWS_BUCKET
+	ret[3] = "AWS_REGION=" + c.AWS_REGION
+	ret[4] = fmt.Sprintf("S3_MOCK=%v", c.S3_MOCK)
+	ret[5] = "S3_ENDPOINT=" + c.S3_ENDPOINT
+	ret[6] = fmt.Sprintf("S3_DISABLE_SSL=%v", c.S3_DISABLE_SSL)
+	ret[7] = fmt.Sprintf("S3_FORCE_PATH_STYLE=%v", c.S3_FORCE_PATH_STYLE)
+	//ret[13] = "REDIS_HOST=" + c.REDIS_HOST
+	//ret[14] = "REDIS_PORT=" + c.REDIS_PORT
+	//ret[15] = "REDIS_PASSWORD=" + c.REDIS_PASSWORD
+	//ret[16] = "SQS_ENDPOINT=" + c.SQS_ENDPOINT
+	return ret
 }
