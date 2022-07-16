@@ -18,7 +18,7 @@ func TestReadPayload(t *testing.T) {
 }
 
 func TestReadManifest(t *testing.T) {
-	path := "../exampledata/ras_mutator_manifest.yml"
+	path := "../exampledata/ras_mutator_manifest.yaml"
 	manifest := plugin.ModelManifest{}
 	readObject(t, path, &manifest)
 }
