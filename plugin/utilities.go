@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/USACE/filestore"
+	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
 )
 
@@ -82,6 +83,19 @@ type Message struct {
 	timeStamp time.Time
 }
 
+func InitConfigFromEnv() error {
+	cfg := Config{
+		AwsConfigs: []AwsConfig{},
+	}
+	cfgs := make([]AwsConfig, 1)
+	awsCfg := AwsConfig{}
+	if err := envconfig.Process("", &awsCfg); err != nil {
+		return err
+	}
+	cfgs[0] = awsCfg
+	return InitConfig(cfg)
+
+}
 func InitConfigFromPath(configPath string) error {
 	cfg, err := readConfig(configPath)
 	if err != nil {
