@@ -6,12 +6,15 @@ type Plugin struct {
 	ImageAndTag string   `json:"image_and_tag" yaml:"image_and_tag"`
 	Command     []string `json:"command" yaml:"command"`
 }
+type Model struct {
+	Name        string `json:"name" yaml:"name"`
+	Alternative string `json:"alternative,omitempty" yaml:"alternative,omitempty"`
+}
 
 //ModelIdentifier a model identifier describes a model at a high level, the name, a given alternative (simulation, plan, etc.) and the associated files that define the geometry (optional)
 type ModelIdentifier struct {
-	Name        string              `json:"name" yaml:"name"`
-	Alternative string              `json:"alternative,omitempty" yaml:"alternative,omitempty"`
-	Files       []ResourcedFileData `json:"files,omitempty" yaml:"files,omitempty"`
+	Model
+	Files []ResourcedFileData `json:"files,omitempty" yaml:"files,omitempty"`
 }
 type Store string
 

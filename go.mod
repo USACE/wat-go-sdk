@@ -30,4 +30,5 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.31.0
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0
 )

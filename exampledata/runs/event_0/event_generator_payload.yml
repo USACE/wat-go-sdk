@@ -1,4 +1,6 @@
 payload_id: 185518c3-9601-5ae2-96f1-64cf11f47f75
+model:
+    name: EG
 event_index: 0
 inputs:
     - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510

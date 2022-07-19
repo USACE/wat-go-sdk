@@ -31,18 +31,10 @@ func (lms *linkedManifestStack) Pop() (LinkedModelManifest, error) {
 	return lm, nil
 }
 
-type provisionedResources struct { //this is very aws specific. can we make this provider agnostic? should it live here?
-	LinkedManifestID      string
-	ComputeEnvironmentARN *string
-	JobDefinitionARN      *string
-	JobARN                []*string
-	QueueARN              *string
-}
-
 type DirectedAcyclicGraph struct {
-	Models          []plugin.ModelIdentifier        `json:"models" yaml:"models"`
-	LinkedManifests []LinkedModelManifest           `json:"linked_manifests" yaml:"linked_manifests"`
-	Resources       map[string]provisionedResources `json:"provisioned_resources" yaml:"provisioned_resources"`
+	Models          []plugin.ModelIdentifier `json:"models" yaml:"models"`
+	LinkedManifests []LinkedModelManifest    `json:"linked_manifests" yaml:"linked_manifests"`
+	//Resources       map[string]provisionedResources `json:"provisioned_resources" yaml:"provisioned_resources"`
 }
 
 func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, error) {
@@ -145,42 +137,10 @@ func (dag DirectedAcyclicGraph) TopologicallySort() ([]LinkedModelManifest, erro
 	return L, nil
 }
 
-func (dag DirectedAcyclicGraph) Dependencies(lm LinkedModelManifest, eventIndex int) ([]*string, error) {
-	dependencies := make([]*string, 0)
-	for _, input := range lm.Inputs {
-		for _, inputManifest := range dag.LinkedManifests {
-			if lm.ManifestID == inputManifest.ManifestID {
-				break //not dependent upon self.
-			}
-			if inputManifest.producesDependency(input) {
-				resources, ok := dag.Resources[inputManifest.ManifestID]
-				if ok {
-					jobArn := resources.JobARN[eventIndex]
-					dependencies = append(dependencies, jobArn)
-				}
-			}
-		}
-	}
-
-	//deduplicate multiple arn references
-	uniqueDependencies := make([]*string, 0)
-	for _, s := range dependencies {
-		contains := false
-		for _, us := range uniqueDependencies {
-			if s == us {
-				contains = true
-				break
-			}
-		}
-		if !contains {
-			uniqueDependencies = append(uniqueDependencies, s)
-		}
-	}
-	return uniqueDependencies, nil
-}
-
 func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventIndex int, outputDestination plugin.ResourceInfo) (plugin.ModelPayload, error) {
 	payload := plugin.ModelPayload{}
+	payload.Model.Name = lm.Model.Name
+	payload.Model.Alternative = lm.Model.Alternative
 	payload.EventIndex = eventIndex
 	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventIndex))).String()
 	//set inputs

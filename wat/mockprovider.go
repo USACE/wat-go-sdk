@@ -18,10 +18,19 @@ import (
 )
 
 type MockProvider struct {
+	config    Config
+	Resources map[string]provisionedResources
 }
 
-func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
-	resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
+func (m MockProvider) ResourcesForLinkedManifest(lmId string) (provisionedResources, bool) {
+	r, ok := m.Resources[lmId]
+	return r, ok
+}
+func (m MockProvider) Dependencies(lm LinkedModelManifest, eventIndex int, dag DirectedAcyclicGraph) ([]*string, error) {
+	return dependencies(lm, eventIndex, dag, m)
+}
+func (m MockProvider) ProvisionResources(jobManager JobManager) error {
+	//resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
 	for _, lm := range jobManager.job.Dag.LinkedManifests {
 		computeEnvironmentArn := lm.ManifestID
 		queueArn := lm.ManifestID
@@ -33,9 +42,9 @@ func (m MockProvider) ProvisionResources(jobManager *JobManager) error {
 			JobARN:                []*string{},
 			QueueARN:              &queueArn,
 		}
-		resources[lm.ManifestID] = lmResource
+		m.Resources[lm.ManifestID] = lmResource
 	}
-	jobManager.job.Dag.Resources = resources
+	//jobManager.job.Dag.Resources = resources
 	plugin.Log(plugin.Message{
 		Message: "provisioned resources",
 		Level:   plugin.INFO,
@@ -58,13 +67,21 @@ func (m MockProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, 
 		Level:   plugin.INFO,
 		Sender:  job.Id,
 	})
-	resources, ok := job.Dag.Resources[linkedManifest.ManifestID]
+	resources, ok := m.Resources[linkedManifest.ManifestID]
 	batchJobArn := payloadPath
 	if ok {
 		resources.JobARN = append(resources.JobARN, &batchJobArn)
-		job.Dag.Resources[linkedManifest.ManifestID] = resources
-		env := make([]string, 0)
-		_, err := startContainer(linkedManifest.ImageAndTag, batchJobArn, env)
+		m.Resources[linkedManifest.ManifestID] = resources
+		pconfig, err := m.config.PrimaryConfig()
+		if err != nil {
+			plugin.Log(plugin.Message{
+				Message: err.Error(),
+				Level:   plugin.ERROR,
+				Sender:  job.Id,
+			})
+		}
+		env := pconfig.EnvironmentVariables()
+		_, err = startContainer(linkedManifest.ImageAndTag, batchJobArn, env)
 		if err != nil {
 			plugin.Log(plugin.Message{
 				Message: err.Error(),

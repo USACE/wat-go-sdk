@@ -1,4 +1,6 @@
 payload_id: 1a547fbe-80bc-5612-8000-a779194061b9
+model:
+    name: hsm
 event_index: 0
 inputs:
     - filename: event_configuration.json

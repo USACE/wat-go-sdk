@@ -14,7 +14,8 @@ RUN go mod download
 RUN go mod tidy
 RUN go build main.go
 ENTRYPOINT /go/bin/CompileDaemon --build="go build main.go"
-#CMD [ "./main" ] ##not working with active branch for testing - needs to be branch specific not main specific.
+CMD [ "./main" ] 
+##not working with active branch for testing - needs to be branch specific not main specific.
 # Production container
 #FROM golang:1.18-alpine3.15 AS prod
 #RUN apk add --update docker openrc

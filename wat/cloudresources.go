@@ -20,6 +20,13 @@ const (
 	MOCK  Provider = "Mock"
 )
 
+type provisionedResources struct { //this is very aws specific. can we make this provider agnostic? should it live here?
+	LinkedManifestID      string
+	ComputeEnvironmentARN *string
+	JobDefinitionARN      *string
+	JobARN                []*string
+	QueueARN              *string
+}
 type ComputeResourceRequirements struct {
 	LinkedManifestID   string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
 	ComputeEnvironment string `json:"compute_environment" yaml:"compute_environment"` //is this provided as JSON?
@@ -28,17 +35,60 @@ type ComputeResourceRequirements struct {
 }
 type CloudProvider interface {
 	//initialize it with some sort of configuration?
-	ProvisionResources(jobManager *JobManager) error
+	ProvisionResources(jobManager JobManager) error
+	Dependencies(lm LinkedModelManifest, eventIndex int, dag DirectedAcyclicGraph) ([]*string, error)
+	ResourcesForLinkedManifest(linkedManifestId string) (provisionedResources, bool)
 	TearDownResources(job Job) error
 	ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error
 }
 
 type BatchCloudProvider struct {
 	BatchSession *batch.Batch
+	Resources    map[string]provisionedResources
 }
 
-func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
-	resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
+func dependencies(lm LinkedModelManifest, eventIndex int, dag DirectedAcyclicGraph, cp CloudProvider) ([]*string, error) {
+	dependencies := make([]*string, 0)
+	for _, input := range lm.Inputs {
+		for _, inputManifest := range dag.LinkedManifests {
+			if lm.ManifestID == inputManifest.ManifestID {
+				break //not dependent upon self.
+			}
+			if inputManifest.producesDependency(input) {
+				resources, ok := cp.ResourcesForLinkedManifest(inputManifest.ManifestID)
+				if ok {
+					jobArn := resources.JobARN[eventIndex]
+					dependencies = append(dependencies, jobArn)
+				}
+			}
+		}
+	}
+
+	//deduplicate multiple arn references
+	uniqueDependencies := make([]*string, 0)
+	for _, s := range dependencies {
+		contains := false
+		for _, us := range uniqueDependencies {
+			if s == us {
+				contains = true
+				break
+			}
+		}
+		if !contains {
+			uniqueDependencies = append(uniqueDependencies, s)
+		}
+	}
+	return uniqueDependencies, nil
+}
+func (b BatchCloudProvider) Dependencies(lm LinkedModelManifest, eventIndex int, dag DirectedAcyclicGraph) ([]*string, error) {
+	return dependencies(lm, eventIndex, dag, b)
+}
+func (b BatchCloudProvider) ResourcesForLinkedManifest(lmId string) (provisionedResources, bool) {
+	r, ok := b.Resources[lmId]
+	return r, ok
+}
+func (b BatchCloudProvider) ProvisionResources(jobManager JobManager) error {
+	//resources := make(map[string]provisionedResources, len(jobManager.job.Dag.LinkedManifests))
 	for _, lm := range jobManager.job.Dag.LinkedManifests {
 		computeResourceRequirements, err := jobManager.LinkedManifestComputeResources(lm.ManifestID)
 		if err != nil {
@@ -87,9 +137,9 @@ func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
 			JobARN:                []*string{},
 			QueueARN:              queueArn,
 		}
-		resources[lm.ManifestID] = lmResource
+		b.Resources[lm.ManifestID] = lmResource
 	}
-	jobManager.job.Dag.Resources = resources
+	//jobManager.cloud.Resources = resources
 	plugin.Log(plugin.Message{
 		Message: "provisioned resources",
 		Level:   plugin.INFO,
@@ -99,7 +149,7 @@ func (b BatchCloudProvider) ProvisionResources(jobManager *JobManager) error {
 }
 func (b BatchCloudProvider) TearDownResources(job Job) error {
 
-	for _, resources := range job.Dag.Resources {
+	for _, resources := range b.Resources {
 		//kill all active jobs?
 		for _, jobArn := range resources.JobARN {
 			err := cancelJob(b.BatchSession, jobArn)
@@ -139,8 +189,8 @@ func (b BatchCloudProvider) TearDownResources(job Job) error {
 func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath string, linkedManifest LinkedModelManifest) error {
 	batchJobArn := "Placeholder for Batch response"
 	//set job arn
-	resources, ok := job.Dag.Resources[linkedManifest.ManifestID]
-	dependsOn, err := job.Dag.Dependencies(linkedManifest, eventIndex)
+	resources, ok := b.Resources[linkedManifest.ManifestID]
+	dependsOn, err := b.Dependencies(linkedManifest, eventIndex, job.Dag)
 	if err != nil {
 		return err
 	}
@@ -178,7 +228,7 @@ func (b BatchCloudProvider) ProcessTask(job *Job, eventIndex int, payloadPath st
 	batchJobArn = *output.JobId
 	if ok {
 		resources.JobARN = append(resources.JobARN, &batchJobArn)
-		job.Dag.Resources[linkedManifest.ManifestID] = resources
+		b.Resources[linkedManifest.ManifestID] = resources
 	} else {
 		return errors.New("task for " + linkedManifest.Plugin.Name)
 	}
@@ -219,9 +269,14 @@ func InitalizeSession(config Config) (CloudProvider, error) {
 		}
 		batchClient = batch.New(s)
 		provider.BatchSession = batchClient
+		provider.Resources = make(map[string]provisionedResources)
 		return provider, nil
 	case MOCK:
-		return MockProvider{}, nil
+		provider := MockProvider{
+			config:    config,
+			Resources: make(map[string]provisionedResources),
+		}
+		return provider, nil
 	default:
 		return nil, errors.New("cloud provider unknown")
 	}
