@@ -4,11 +4,11 @@ import "github.com/usace/wat-go-sdk/plugin"
 
 // LinkedModelManifest represents a model manifest that has been linked (i.e. has dependencies)
 type LinkedModelManifest struct {
-	ManifestID             string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
-	plugin.Plugin          `json:"plugin" yaml:"plugin"`
-	plugin.ModelIdentifier `json:"model_identifier" yaml:"model_identifier"`
-	Inputs                 []LinkedFileData  `json:"inputs" yaml:"inputs"`
-	Outputs                []plugin.FileData `json:"outputs" yaml:"outputs"`
+	ManifestID    string `json:"linked_manifest_id" yaml:"linked_manifest_id"`
+	plugin.Plugin `json:"plugin" yaml:"plugin"`
+	plugin.Model  `json:"model" yaml:"model"`
+	Inputs        []LinkedFileData  `json:"inputs" yaml:"inputs"`
+	Outputs       []plugin.FileData `json:"outputs" yaml:"outputs"`
 }
 
 // LinkedFileData

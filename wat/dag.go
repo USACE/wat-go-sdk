@@ -181,6 +181,8 @@ func (dag DirectedAcyclicGraph) Dependencies(lm LinkedModelManifest, eventIndex 
 
 func (dag DirectedAcyclicGraph) GeneratePayload(lm LinkedModelManifest, eventIndex int, outputDestination plugin.ResourceInfo) (plugin.ModelPayload, error) {
 	payload := plugin.ModelPayload{}
+	payload.Model.Name = lm.Model.Name
+	payload.Model.Alternative = lm.Model.Alternative
 	payload.EventIndex = eventIndex
 	payload.Id = uuid.NewSHA1(uuid.MustParse(lm.ManifestID), []byte(fmt.Sprintf("event%v", eventIndex))).String()
 	//set inputs

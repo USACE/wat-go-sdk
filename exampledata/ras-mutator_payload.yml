@@ -1,4 +1,7 @@
 payload_id: 17b6ca16-70af-54bd-98d3-0329d69b957b
+model:
+    name: Muncie
+    alternative: .p04
 event_index: 0
 inputs:
     - id: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2

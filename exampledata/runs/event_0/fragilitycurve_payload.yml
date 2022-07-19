@@ -1,4 +1,6 @@
 payload_id: 0970649d-d358-5043-9863-c87a9dec8e7c
+model:
+    name: FC
 event_index: 0
 inputs:
     - filename: event_configuration.json

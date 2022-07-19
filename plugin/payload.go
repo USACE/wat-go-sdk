@@ -2,7 +2,8 @@ package plugin
 
 // Payload
 type ModelPayload struct {
-	Id         string              `json:"payload_id" yaml:"payload_id"`
+	Id string `json:"payload_id" yaml:"payload_id"`
+	Model
 	EventIndex int                 `json:"event_index" yaml:"event_index"`
 	Inputs     []ResourcedFileData `json:"inputs" yaml:"inputs"`
 	Outputs    []ResourcedFileData `json:"outputs" yaml:"outputs"`

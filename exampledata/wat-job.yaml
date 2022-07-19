@@ -2,7 +2,8 @@ job_identifier: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
 event_start_index: 0
 event_end_index: 1
 models:
-  - name: EG
+  - model:
+      name: EG
     files:
       - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510
         filename: EG.json
@@ -10,7 +11,8 @@ models:
           store: s3
           root: model-library
           path: /kanawha/models/EG.json
-  - name: fc
+  - model:
+      name: fc
     files:
       - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
         filename: fc.json
@@ -18,7 +20,8 @@ models:
           store: s3
           root: model-library
           path: /kanawha/models/fc.json
-  - name: hsm
+  - model:
+      name: hsm
     files:
       - id: 4a04b3f9-2413-4143-865a-769a9432c33f
         filename: hsm.json        
@@ -26,8 +29,9 @@ models:
           store: s3
           root: model-library
           path: /kanawha/models/hsm.json
-  - name: Muncie
-    alternative: .p04
+  - model:
+      name: Muncie
+      alternative: .p04
     files:
       - id: d1d60c2e-f3b4-436b-9c87-c6fb5f5653a2
         filename: Muncie.p04.tmp.hdf        

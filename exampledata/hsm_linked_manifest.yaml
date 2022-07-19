@@ -5,7 +5,8 @@ plugin:
   command:
     - ./main
     - payload=
-model_identifier:
+model:
+  name: hsm
 inputs:
   - filename: event_configuration.json
     source_data_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d

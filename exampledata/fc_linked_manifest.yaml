@@ -5,7 +5,7 @@ plugin:
   command:
     - ./main
     - payload=
-model_identifier:
+model:
   name: FC
 inputs:
   - filename: event_configuration.json
