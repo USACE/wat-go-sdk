@@ -56,7 +56,6 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 	job.Dag = DirectedAcyclicGraph{
 		Models:          jm.Models,
 		LinkedManifests: linkedManifests,
-		Resources:       map[string]provisionedResources{},
 	}
 	return job, nil
 }
@@ -103,7 +102,7 @@ func (jm JobManager) LinkedManifestComputeResources(linkedManifestId string) (Co
 	return ComputeResourceRequirements{}, errors.New("linked manifest id not found in compute resources")
 }
 func (jm JobManager) ProcessJob() error {
-	err := jm.cloud.ProvisionResources(&jm)
+	err := jm.cloud.ProvisionResources(jm)
 	if err != nil {
 		return err
 	}
@@ -295,7 +294,7 @@ func (job *Job) submitTask(manifest LinkedModelManifest, eventIndex int, cloud C
 
 	//depends on cloud-resources//
 	offset := eventIndex - job.EventStartIndex
-	dependencies, err := job.Dag.Dependencies(manifest, offset)
+	dependencies, err := cloud.Dependencies(manifest, offset, job.Dag)
 	if err != nil {
 		return err
 	} else {
