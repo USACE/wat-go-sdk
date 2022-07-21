@@ -1,12 +1,12 @@
 linked_manifest_id: 2c852cf8-1db6-4464-88be-638c603c8e48
 plugin:
   name: fragilitycurve
-  image_and_tag: fragilitycurve:v0.0.1
+  image_and_tag: williamlehman/fragilitycurveplugin:v0.0.8
   command:
     - ./main
     - payload=
 model:
-  name: FC
+  name: fc
 inputs:
   - filename: event_configuration.json
     source_data_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d

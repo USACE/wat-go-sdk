@@ -92,6 +92,7 @@ func InitConfigFromEnv() error {
 	if err := envconfig.Process("", &awsCfg); err != nil {
 		return err
 	}
+	awsCfg.IsPrimary = true
 	cfgs[0] = awsCfg
 	return InitConfig(cfg)
 
