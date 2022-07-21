@@ -285,7 +285,7 @@ func LoadEventConfiguration(filepath string) (EventConfiguration, error) {
 }
 func (ec EventConfiguration) SeedSet(identifier string) (SeedSet, error) {
 	for _, ss := range ec.Seeds {
-		if ss.Itentifier == identifier {
+		if ss.Identifier == identifier {
 			return ss, nil
 		}
 	}

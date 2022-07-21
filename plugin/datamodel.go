@@ -37,7 +37,7 @@ type EventConfiguration struct {
 	Seeds             []SeedSet `json:"seeds"`
 }
 type SeedSet struct {
-	Itentifier      string `json:"identifier"`
+	Identifier      string `json:"identifier"`
 	EventSeed       int64  `json:"event_seed"`
 	RealizationSeed int64  `json:"realization_seed"`
 }
