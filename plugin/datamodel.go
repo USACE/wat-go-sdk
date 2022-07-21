@@ -31,6 +31,17 @@ type ResourceInfo struct {
 	Path  string `json:"path,omitempty" yaml:"path,omitempty"` // path to object
 }
 
+type EventConfiguration struct {
+	EventNumber       int       `json:"event_number"`
+	RealizationNumber int       `json:"realization_number"`
+	Seeds             []SeedSet `json:"seeds"`
+}
+type SeedSet struct {
+	Itentifier      string `json:"identifier"`
+	EventSeed       int64  `json:"event_seed"`
+	RealizationSeed int64  `json:"realization_seed"`
+}
+
 /* up to date as of 6/21/2022
 The main elements of concern in a plugin are the following elements:
 1. A Manifest File
