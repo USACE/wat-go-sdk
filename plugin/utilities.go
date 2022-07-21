@@ -246,6 +246,51 @@ func Log(message Message) {
 		logger.write(message)
 	}
 }
+func LoadEventConfiguration(filepath string) (EventConfiguration, error) {
+	Log(Message{
+		Message: fmt.Sprintf("reading:%v", filepath),
+		Level:   INFO,
+		Sender:  "Plugin Services",
+	})
+	eventConfig := EventConfiguration{}
+	config, err := PluginConfig.PrimaryConfig()
+	if err != nil {
+		return eventConfig, err
+	}
+	fs, err := getStore(config.AWS_BUCKET)
+	if err != nil {
+		return eventConfig, err
+	}
+	data, err := fs.GetObject(filepath)
+	if err != nil {
+		return eventConfig, err
+	}
+
+	body, err := ioutil.ReadAll(data)
+	if err != nil {
+		return eventConfig, err
+	}
+
+	err = yaml.Unmarshal(body, &eventConfig)
+	if err != nil {
+		Log(Message{
+			Message: fmt.Sprintf("error reading:%v", filepath),
+			Level:   ERROR,
+			Sender:  "Plugin Services",
+		})
+		return eventConfig, err
+	}
+
+	return eventConfig, nil
+}
+func (ec EventConfiguration) SeedSet(identifier string) (SeedSet, error) {
+	for _, ss := range ec.Seeds {
+		if ss.Itentifier == identifier {
+			return ss, nil
+		}
+	}
+	return SeedSet{}, fmt.Errorf("SeedSet with identifier %v not found", identifier)
+}
 func LoadPayload(filepath string) (ModelPayload, error) {
 	Log(Message{
 		Message: fmt.Sprintf("reading:%v", filepath),
