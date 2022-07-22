@@ -248,27 +248,14 @@ func Log(message Message) {
 		logger.write(message)
 	}
 }
-func LoadEventConfiguration(filepath string) (EventConfiguration, error) {
+func LoadEventConfiguration(resourceInfo ResourceInfo) (EventConfiguration, error) {
 	Log(Message{
-		Message: fmt.Sprintf("reading:%v", filepath),
+		Message: fmt.Sprintf("reading:%v", resourceInfo.Path),
 		Level:   INFO,
 		Sender:  "Plugin Services",
 	})
 	eventConfig := EventConfiguration{}
-	config, err := PluginConfig.PrimaryConfig()
-	if err != nil {
-		return eventConfig, err
-	}
-	fs, err := getStore(config.AWS_BUCKET)
-	if err != nil {
-		return eventConfig, err
-	}
-	data, err := fs.GetObject(filepath)
-	if err != nil {
-		return eventConfig, err
-	}
-
-	body, err := ioutil.ReadAll(data)
+	body, err := DownloadObject(resourceInfo)
 	if err != nil {
 		return eventConfig, err
 	}
@@ -276,7 +263,7 @@ func LoadEventConfiguration(filepath string) (EventConfiguration, error) {
 	err = yaml.Unmarshal(body, &eventConfig)
 	if err != nil {
 		Log(Message{
-			Message: fmt.Sprintf("error reading:%v", filepath),
+			Message: fmt.Sprintf("error reading:%v", resourceInfo.Path),
 			Level:   ERROR,
 			Sender:  "Plugin Services",
 		})
@@ -295,7 +282,7 @@ func (ec EventConfiguration) SeedSet(identifier string) (SeedSet, error) {
 }
 func LoadPayload(filepath string) (ModelPayload, error) {
 	Log(Message{
-		Message: fmt.Sprintf("reading:%v", filepath),
+		Message: fmt.Sprintf("reading payload at path:%v", filepath),
 		Level:   INFO,
 		Sender:  "Plugin Services",
 	})
@@ -389,7 +376,7 @@ func DownloadObject(resource ResourceInfo) ([]byte, error) {
 		return body, nil
 	case LOCAL:
 		Log(Message{
-			Message: fmt.Sprintf("reading from S3:%v", resource.Path),
+			Message: fmt.Sprintf("reading from Local file store:%v", resource.Path),
 			Level:   INFO,
 			Sender:  "Plugin Services",
 		})

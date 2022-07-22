@@ -3,8 +3,6 @@ package wat
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/usace/wat-go-sdk/plugin"
@@ -33,15 +31,8 @@ func (jm JobManifest) ConvertToJob() (Job, error) {
 	linkedManifests := make([]LinkedModelManifest, len(jm.LinkedManifestResources))
 
 	for idx, resourceInfo := range jm.LinkedManifestResources {
-		// fmt.Println(resourceInfo.Path)
 		lm := LinkedModelManifest{}
-		file, err := os.Open(resourceInfo.Path) //replace with filestore? injected?
-		if err != nil {
-			return job, err
-		}
-
-		defer file.Close()
-		b, err := ioutil.ReadAll(file)
+		b, err := plugin.DownloadObject(resourceInfo)
 		if err != nil {
 			return job, err
 		}
