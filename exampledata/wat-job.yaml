@@ -64,16 +64,16 @@ models:
           root: model-library
           path: /kanawha/models/Muncie.prj
 linked_manifests: #could be stored in a database rather than files on a 
-  - store: s3
+  - store: Local
     root: model-library
     path: ../exampledata/ras_mutator_linked_manifest.yaml
-  - store: s3
+  - store: Local
     root: model-library
     path: ../exampledata/event_generator_linked_manifest.yaml
-  - store: s3
+  - store: Local
     root: model-library
     path: ../exampledata/hsm_linked_manifest.yaml
-  - store: s3
+  - store: Local
     root: model-library
     path: ../exampledata/fc_linked_manifest.yaml
 
