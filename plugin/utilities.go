@@ -94,6 +94,7 @@ func InitConfigFromEnv() error {
 	}
 	awsCfg.IsPrimary = true
 	cfgs[0] = awsCfg
+	cfg.AwsConfigs = cfgs
 	return InitConfig(cfg)
 
 }
