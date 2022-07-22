@@ -10,8 +10,8 @@ inputs:
         root: model-library
         path: /kanawha/models/EG.json
 outputs:
-    - filename: event_configuration.json
+    - filename: eventconfiguration.json
       resource_info:
         store: Local
         root: ../exampledata
-        path: ../exampledata/runs/event_0/event_configuration.json
+        path: ../exampledata/runs/event_0/eventconfiguration.json
