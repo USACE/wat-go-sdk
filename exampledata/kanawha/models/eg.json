@@ -1,0 +1,18 @@
+{
+	"initial_event_seed": 1234,
+	"initial_realization_seed": 9876,
+	"events_per_realization": 10,
+	"model_seeds": [{
+		"identifier": "fc",
+		"event_seed": 234,
+		"realization_seed": 987
+	}, {
+		"identifier": "pluginB",
+		"event_seed": 345,
+		"realization_seed": 876
+	}, {
+		"identifier": "pluginC",
+		"event_seed": 456,
+		"realization_seed": 765
+	}]
+}

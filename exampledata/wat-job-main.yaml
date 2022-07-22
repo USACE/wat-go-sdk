@@ -2,14 +2,14 @@ job_identifier: 6d36a145-6658-4c4b-ab75-d6f30e5ee0d4
 event_start_index: 0
 event_end_index: 1
 models:
-  - name: EG
+  - name: eg
     files:
       - id: dd9be3e5-c4ee-485e-a2c7-c5e225677510
-        filename: EG.json
+        filename: eg.json
         resource_info:
           store: S3
           root: model-library
-          path: /kanawha/models/EG.json
+          path: /kanawha/models/eg.json
   - name: fc
     files:
       - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11

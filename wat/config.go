@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/usace/wat-go-sdk/plugin"
 )
 
 type AwsConfig struct {
@@ -47,6 +49,31 @@ func InitConfig(path string) (Config, error) {
 		return cfg, err
 	}
 	err = json.Unmarshal(bytes, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+	pc, err := cfg.PrimaryConfig()
+	if err != nil {
+		return cfg, err
+	}
+	pac := plugin.AwsConfig{
+		Name:                  "wat-config",
+		IsPrimary:             true,
+		AWS_ACCESS_KEY_ID:     pc.AWS_ACCESS_KEY_ID,
+		AWS_SECRET_ACCESS_KEY: pc.AWS_SECRET_ACCESS_KEY,
+		AWS_REGION:            pc.AWS_REGION,
+		AWS_BUCKET:            pc.AWS_BUCKET,
+		S3_MOCK:               pc.S3_MOCK,
+		S3_ENDPOINT:           pc.S3_ENDPOINT,
+		S3_DISABLE_SSL:        pc.S3_DISABLE_SSL,
+		S3_FORCE_PATH_STYLE:   pc.S3_FORCE_PATH_STYLE,
+	}
+	pacs := make([]plugin.AwsConfig, 1)
+	pacs[0] = pac
+	pcfg := plugin.Config{
+		AwsConfigs: pacs,
+	}
+	err = plugin.InitConfig(pcfg)
 	if err != nil {
 		return cfg, err
 	}
