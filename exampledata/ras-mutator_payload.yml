@@ -35,7 +35,7 @@ inputs:
           resource_info:
             store: Local
             root: ../exampledata
-            path: ../exampledata/runs/event_0/fc1.csv
+            path: ../exampledata/runs/event_0/fc_output.json
         - pathname: Boundary4
           filename: hsm3.dss
           internal_path: /a/b/c/d/e/f/
