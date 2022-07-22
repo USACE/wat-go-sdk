@@ -3,11 +3,19 @@ model:
     name: fc
 event_index: 0
 inputs:
-    - filename: event_configuration.json
+    - filename: eventconfiguration.json
       resource_info:
         store: Local
         root: ../exampledata
-        path: ../exampledata/runs/event_0/event_configuration.json
+        path: ../exampledata/runs/event_0/eventconfiguration.json
+      internal_paths:
+        - pathname: fc
+          filename: eventconfiguration.json
+          internal_path: fc
+          resource_info:
+            store: Local
+            root: ../exampledata
+            path: ../exampledata/runs/event_0/eventconfiguration.json
     - id: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
       filename: fc.json
       resource_info:
@@ -15,8 +23,8 @@ inputs:
         root: model-library
         path: /kanawha/models/fc.json
 outputs:
-    - filename: fc1.csv
+    - filename: fc_output.json
       resource_info:
         store: Local
         root: ../exampledata
-        path: ../exampledata/runs/event_0/fc1.csv
+        path: ../exampledata/runs/event_0/fc_output.json

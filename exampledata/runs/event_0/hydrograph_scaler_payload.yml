@@ -7,7 +7,7 @@ inputs:
       resource_info:
         store: Local
         root: ../exampledata
-        path: ../exampledata/runs/event_0/event_configuration.json
+        path: ../exampledata/runs/event_0/eventconfiguration.json
     - id: 4a04b3f9-2413-4143-865a-769a9432c33f
       filename: hsm.json
       resource_info:

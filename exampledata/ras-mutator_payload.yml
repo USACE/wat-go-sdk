@@ -31,7 +31,7 @@ inputs:
         path: /kanawha/models/Muncie.b04
       internal_paths:
         - pathname: BreachLocationA
-          filename: fc1.csv
+          filename: fc_output.json
           resource_info:
             store: Local
             root: ../exampledata
