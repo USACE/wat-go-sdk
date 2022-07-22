@@ -1,7 +1,7 @@
 linked_manifest_id: 4aa60be5-a639-40cd-b006-acf6f1f595f4
 plugin:
   name: event_generator
-  image_and_tag: williamlehman/eventgeneratorplugin:v0.0.1
+  image_and_tag: williamlehman/eventgeneratorplugin:v0.0.2
   command:
     - ./main
     - payload=

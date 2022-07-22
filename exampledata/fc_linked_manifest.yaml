@@ -1,7 +1,7 @@
 linked_manifest_id: 2c852cf8-1db6-4464-88be-638c603c8e48
 plugin:
   name: fragilitycurve
-  image_and_tag: williamlehman/fragilitycurveplugin:v0.0.8
+  image_and_tag: williamlehman/fragilitycurveplugin:v0.0.9
   command:
     - ./main
     - payload=
